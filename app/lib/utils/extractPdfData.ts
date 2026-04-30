@@ -40,6 +40,7 @@ function parseConstanciaFiscal(text: string): ExtractedPdfData {
     regimen: ''
   }
 
+  // Mantenemos tus utilidades de limpieza
   const cleanText = text.replace(/\s+/g, ' ').trim()
   const lineas = text
     .split(/\n+/)
@@ -49,7 +50,7 @@ function parseConstanciaFiscal(text: string): ExtractedPdfData {
   const normalizeName = (value: string) =>
     value
       .replace(/\s+/g, ' ')
-      .replace(/^[:\-–\s]+|[:\-–\s]+$/g, '')
+      .replace(/^[:\-–\s|]+|[:\-–\s|]+$/g, '') // Agregué el pipe | a la limpieza
       .trim()
 
   const cleanupValue = (value: string) =>
@@ -57,51 +58,52 @@ function parseConstanciaFiscal(text: string): ExtractedPdfData {
       value.replace(/\b(RFC|CURP|DOMICILIO|ESTATUS|FECHA|FOLIO|C[ÓO]DIGO|DATOS|IDENTIFICACI[ÓO]N|SITUACI[ÓO]N|OBLIGACIONES|R[ÉE]GIMEN|REGIMEN|NOMBRE COMERCIAL)\b.*$/i, '')
     )
 
+  // Ajuste en getFieldValue para manejar mejor los separadores del SAT (|)
   const getFieldValue = (scopeLines: string[], labelPatterns: RegExp[]) => {
     for (let index = 0; index < scopeLines.length; index++) {
       const line = scopeLines[index]
 
       for (const labelPattern of labelPatterns) {
         const match = line.match(labelPattern)
-        if (!match) {
-          continue
-        }
+        if (!match) continue
 
+        // Si el valor está en la misma línea después de la etiqueta o el pipe
         const inlineValue = cleanupValue(match[1] ?? '')
-        if (inlineValue) {
+        if (inlineValue && inlineValue !== '|') {
           return inlineValue
         }
 
+        // Si el valor está en la siguiente línea
         const nextLine = scopeLines[index + 1]
         if (nextLine && !/^(RFC|CURP|DOMICILIO|ESTATUS|FECHA|FOLIO|PRIMER APELLIDO|SEGUNDO APELLIDO|APELLIDO PATERNO|APELLIDO MATERNO|NOMBRE COMERCIAL|REGISTRO FEDERAL)/i.test(nextLine)) {
           return cleanupValue(nextLine)
         }
       }
     }
-
     return ''
   }
 
+  // Mejora en los patterns para capturar después de los pipes "|" comunes en el PDF del SAT
   const getPersonaFisicaName = (scopeLines: string[]) => {
     const nombre = getFieldValue(scopeLines, [
-      /^NOMBRE\s*\(\s*S\s*\)\s*:?\s*(.*)$/i,
-      /^NOMBRES?\s*:?\s*(.*)$/i,
-      /^NOMBRE\s*:?\s*(.*)$/i,
+      /Nombre\s*\(s\)\s*[:|]\s*(.*)/i,
+      /Nombres?\s*[:|]\s*(.*)/i
     ])
 
     const apellidoPaterno = getFieldValue(scopeLines, [
-      /^PRIMER\s+APELLIDO\s*:?\s*(.*)$/i,
-      /^APELLIDO\s+PATERNO\s*:?\s*(.*)$/i,
+      /Primer\s+Apellido\s*[:|]\s*(.*)/i,
+      /Apellido\s+Paterno\s*[:|]\s*(.*)/i
     ])
 
     const apellidoMaterno = getFieldValue(scopeLines, [
-      /^SEGUNDO\s+APELLIDO\s*:?\s*(.*)$/i,
-      /^APELLIDO\s+MATERNO\s*:?\s*(.*)$/i,
+      /Segundo\s+Apellido\s*[:|]\s*(.*)/i,
+      /Apellido\s+Materno\s*[:|]\s*(.*)/i
     ])
 
+    // Filtramos valores que solo sean el pipe "|" o vacíos
     const fullName = [nombre, apellidoPaterno, apellidoMaterno]
-      .map(cleanupValue)
-      .filter(Boolean)
+      .map(v => v.replace(/^\|/, '').trim())
+      .filter(v => v && v.length > 1)
       .join(' ')
 
     return fullName
@@ -153,18 +155,21 @@ function parseConstanciaFiscal(text: string): ExtractedPdfData {
     }
   }
 
-  const denominationMatch = cleanText.match(/DENOMINACI[ÓO]N\/?RAZ[ÓO]N SOCIAL\s*:?\s*([^\n]+)/i)
-  if (denominationMatch?.[1]) {
-    data.razonSocial = cleanupValue(denominationMatch[1])
+  // Priorizamos la detección de Persona Física si el RFC tiene 13 caracteres
+  const isFisica = data.rfc.length === 13
+  const personaFisicaName = getPersonaFisicaName(lineas)
+
+  if (isFisica && personaFisicaName) {
+    data.razonSocial = personaFisicaName
   } else {
-    const personaFisicaName = getPersonaFisicaName(lineas)
-    if (personaFisicaName) {
+    // Si no es física o no se encontró el nombre desglosado, buscamos denominación (Moral)
+    const denominationMatch = cleanText.match(/Denominaci[óo]n\s*\/?\s*Raz[óo]n\s+Social\s*[:|]\s*(.*?)(?=R[ée]gimen Capital|RFC|CURP|$)/i)
+    if (denominationMatch?.[1]) {
+      data.razonSocial = cleanupValue(denominationMatch[1])
+    } else if (personaFisicaName) {
       data.razonSocial = personaFisicaName
     } else {
-      const topName = getTopNameCandidate(lineas)
-      if (topName) {
-        data.razonSocial = topName
-      }
+      data.razonSocial = getTopNameCandidate(lineas) || 'No especificada'
     }
   }
 
