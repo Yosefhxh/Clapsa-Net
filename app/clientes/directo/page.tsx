@@ -1,44 +1,96 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FileText, Upload, Search, Filter, Trash2, CheckCircle2, Loader2 } from 'lucide-react';
+import { FileText, Upload, Search, Trash2, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { extractPdfData } from '@/app/lib/utils/extractPdfData';
+import { registrarCliente, obtenerClientes, eliminarCliente } from '@/app/lib/actions/clientes';
 
-// Interfaz para nuestros clientes simulados
 interface Cliente {
   id: number;
+  folio: string;
   razonSocial: string;
   rfc: string;
   regimen: string;
-  tipo: 'Directo' | 'Forwarder';
+  tipo: 'DIRECTO' | 'FORWARDER';
 }
 
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState<'Todos' | 'Directo' | 'Forwarder'>('Todos');
   const [estaEscaneando, setEstaEscaneando] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const cargarClientes = async () => {
+      const clientesGuardados = await obtenerClientes('DIRECTO');
+
+      setClientes(
+        clientesGuardados.map((cliente) => ({
+          id: cliente.id,
+          folio: cliente.folio,
+          razonSocial: cliente.razonSocial,
+          rfc: cliente.rfc,
+          regimen: 'No especificado',
+          tipo: 'DIRECTO',
+        }))
+      );
+    };
+
+    cargarClientes();
+  }, []);
 
   // Lógica de carga y validación de PDF
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     
+    if (!file) return;
+    
     setEstaEscaneando(true);
+    setError('');
 
-    // Simulamos un proceso de extracción de datos (OCR) que tardaría 2 segundos
-    setTimeout(() => {
-      const nuevoCliente: Cliente = {
-        id: Date.now(),
-        razonSocial: "EMPRESA SIMULADA S.A. DE C.V.", // Esto vendría del PDF
-        rfc: "ABC123456H01",
-        regimen: "General de Ley Personas Morales",
-        tipo: Math.random() > 0.5 ? 'Directo' : 'Forwarder'
-      };
+    try {
+      // Extraer datos reales del PDF
+      const datosExtraidos = await extractPdfData(file);
+      
+      // Validar que al menos tengamos RFC (obligatorio)
+      if (!datosExtraidos.rfc) {
+        setError('No se pudo encontrar el RFC en el PDF. Verifica que sea una Constancia de Situación Fiscal válida.');
+        setEstaEscaneando(false);
+        return;
+      }
 
-      setClientes(prev => [nuevoCliente, ...prev]);
+      // Si no hay razón social, usar un placeholder
+      const razonSocial = datosExtraidos.razonSocial || 'No especificada';
+      
+      // Registrar en el servidor
+      const resultado = await registrarCliente({
+        razonSocial: razonSocial,
+        rfc: datosExtraidos.rfc,
+        tipo: 'DIRECTO'
+      });
+
+      if (resultado.success && resultado.cliente) {
+        const nuevoCliente: Cliente = {
+          id: resultado.cliente.id,
+          folio: resultado.cliente.folio,
+          razonSocial: resultado.cliente.razonSocial,
+          rfc: resultado.cliente.rfc,
+          regimen: datosExtraidos.regimen || 'No especificado',
+          tipo: 'DIRECTO'
+        };
+
+        setClientes(prev => [nuevoCliente, ...prev]);
+        alert("Constancia procesada e registrada con éxito\nFolio: " + nuevoCliente.folio);
+      } else {
+        setError(resultado.error || 'Error al registrar el cliente');
+      }
+    } catch (err) {
+      console.error('Error procesando PDF:', err);
+      setError('Error al procesar el PDF. Intenta con otro archivo.');
+    } finally {
       setEstaEscaneando(false);
-      alert("Constancia procesada con éxito");
-    }, 2000);
+    }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -51,8 +103,7 @@ export default function ClientesPage() {
   // Lógica de filtrado y búsqueda
   const clientesFiltrados = clientes.filter(c => {
     const coincideBusqueda = c.razonSocial.toLowerCase().includes(busqueda.toLowerCase()) || c.rfc.includes(busqueda.toUpperCase());
-    const coincideFiltro = filtroTipo === 'Todos' || c.tipo === filtroTipo;
-    return coincideBusqueda && coincideFiltro;
+    return coincideBusqueda;
   });
 
   return (
@@ -86,6 +137,17 @@ export default function ClientesPage() {
         )}
       </div>
 
+      {/* MOSTRAR ERRORES */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-red-900 font-medium">Error procesando PDF</h3>
+            <p className="text-red-800 text-sm mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* FILTROS Y BÚSQUEDA */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
         <div className="relative w-full md:w-96">
@@ -98,29 +160,19 @@ export default function ClientesPage() {
             onChange={(e) => setBusqueda(e.target.value)}
           />
         </div>
-        
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Filter className="w-4 h-4 text-slate-500" />
-          <select 
-            className="border rounded-lg px-3 py-2 focus:outline-none"
-            value={filtroTipo}
-            onChange={(e) => setFiltroTipo(e.target.value as 'Todos' | 'Directo' | 'Forwarder')}
-          >
-            <option value="Todos">Todos los tipos</option>
-            <option value="Directo">Directo</option>
-            <option value="Forwarder">Forwarder</option>
-          </select>
-        </div>
       </div>
 
       {/* LISTADO DE CLIENTES */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100">
+          <p className="text-sm text-slate-600">Total de clientes registrados: <strong>{clientes.length}</strong></p>
+        </div>
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100">
+              <th className="px-6 py-4 text-sm font-semibold text-slate-600">Folio</th>
               <th className="px-6 py-4 text-sm font-semibold text-slate-600">Razón Social</th>
               <th className="px-6 py-4 text-sm font-semibold text-slate-600">RFC</th>
-              <th className="px-6 py-4 text-sm font-semibold text-slate-600">Tipo</th>
               <th className="px-6 py-4 text-sm font-semibold text-slate-600">Estado</th>
               <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-right">Acciones</th>
             </tr>
@@ -129,6 +181,7 @@ export default function ClientesPage() {
             {clientesFiltrados.length > 0 ? (
               clientesFiltrados.map((cliente) => (
                 <tr key={cliente.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-6 py-4 text-slate-700 font-mono text-sm font-medium">{cliente.folio}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-blue-50 rounded-lg">
@@ -139,21 +192,24 @@ export default function ClientesPage() {
                   </td>
                   <td className="px-6 py-4 text-slate-600 font-mono text-sm">{cliente.rfc}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      cliente.tipo === 'Directo' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
-                    }`}>
-                      {cliente.tipo}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
                     <div className="flex items-center gap-1.5 text-green-600">
                       <CheckCircle2 className="w-4 h-4" />
-                      <span className="text-sm font-medium">Validado</span>
+                      <span className="text-sm font-medium">Registrado</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button 
-                      onClick={() => setClientes(clientes.filter(c => c.id !== cliente.id))}
+                      onClick={async () => {
+                        const confirmado = window.confirm(`¿Eliminar a ${cliente.razonSocial} de la base de datos?`);
+                        if (!confirmado) return;
+
+                        const resultado = await eliminarCliente(cliente.id);
+                        if (resultado.success) {
+                          setClientes(prev => prev.filter(c => c.id !== cliente.id));
+                        } else {
+                          setError(resultado.error || 'Error al eliminar el cliente');
+                        }
+                      }}
                       className="p-2 text-slate-400 hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
