@@ -2,9 +2,9 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FileText, Upload, Search, Trash2, CheckCircle2, Loader2, AlertCircle, Plus, X } from 'lucide-react';
+import { FileText, Upload, Search, Trash2, CheckCircle2, Loader2, AlertCircle, Plus, X, Pencil } from 'lucide-react';
 import { extractPdfData } from '@/app/lib/utils/extractPdfData';
-import { registrarCliente, obtenerClientes, eliminarCliente } from '@/app/lib/actions/clientes';
+import { registrarCliente, obtenerClientes, eliminarCliente, actualizarCliente } from '@/app/lib/actions/clientes';
 
 interface Cliente {
   id: number;
@@ -20,6 +20,8 @@ interface FormData {
   rfc: string;
 }
 
+type ModalMode = 'create' | 'edit';
+
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState('');
@@ -28,6 +30,8 @@ export default function ClientesPage() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [formData, setFormData] = useState<FormData>({ razonSocial: '', rfc: '' });
   const [guardando, setGuardando] = useState(false);
+  const [modalMode, setModalMode] = useState<ModalMode>('create');
+  const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
 
   useEffect(() => {
     const cargarClientes = async () => {
@@ -87,6 +91,25 @@ export default function ClientesPage() {
     disabled: estaEscaneando
   });
 
+  const abrirModalNuevo = () => {
+    setModalMode('create');
+    setClienteEditando(null);
+    setFormData({ razonSocial: '', rfc: '' });
+    setError('');
+    setModalAbierto(true);
+  };
+
+  const abrirModalEdicion = (cliente: Cliente) => {
+    setModalMode('edit');
+    setClienteEditando(cliente);
+    setFormData({
+      razonSocial: cliente.razonSocial,
+      rfc: cliente.rfc,
+    });
+    setError('');
+    setModalAbierto(true);
+  };
+
   const handleGuardarCliente = async () => {
     if (!formData.rfc.trim()) {
       setError('El RFC es obligatorio');
@@ -97,32 +120,55 @@ export default function ClientesPage() {
     setError('');
 
     try {
-      const resultado = await registrarCliente({
+      const payload = {
         razonSocial: formData.razonSocial || 'No especificada',
         rfc: formData.rfc.toUpperCase(),
-        tipo: 'FORWARDER'
-      });
+        tipo: 'FORWARDER' as const,
+      };
 
-      if (resultado.success && resultado.cliente) {
-        const nuevoCliente: Cliente = {
-          id: resultado.cliente.id,
-          folio: resultado.cliente.folio,
-          razonSocial: resultado.cliente.razonSocial,
-          rfc: resultado.cliente.rfc,
-          regimen: 'No especificado',
-          tipo: 'FORWARDER'
-        };
+      if (modalMode === 'edit' && clienteEditando) {
+        const resultado = await actualizarCliente(clienteEditando.id, payload);
 
-        setClientes(prev => [nuevoCliente, ...prev]);
-        setFormData({ razonSocial: '', rfc: '' });
-        setModalAbierto(false);
-        alert("Cliente registrado con éxito\nFolio: " + nuevoCliente.folio);
+        if (resultado.success && resultado.cliente) {
+          setClientes(prev => prev.map((cliente) => (
+            cliente.id === clienteEditando.id
+              ? {
+                  ...cliente,
+                  razonSocial: resultado.cliente.razonSocial,
+                  rfc: resultado.cliente.rfc,
+                }
+              : cliente
+          )));
+          setFormData({ razonSocial: '', rfc: '' });
+          setClienteEditando(null);
+          setModalAbierto(false);
+        } else {
+          setError(resultado.error || 'Error al actualizar el cliente');
+        }
       } else {
-        setError(resultado.error || 'Error al registrar el cliente');
+        const resultado = await registrarCliente(payload);
+
+        if (resultado.success && resultado.cliente) {
+          const nuevoCliente: Cliente = {
+            id: resultado.cliente.id,
+            folio: resultado.cliente.folio,
+            razonSocial: resultado.cliente.razonSocial,
+            rfc: resultado.cliente.rfc,
+            regimen: 'No especificado',
+            tipo: 'FORWARDER'
+          };
+
+          setClientes(prev => [nuevoCliente, ...prev]);
+          setFormData({ razonSocial: '', rfc: '' });
+          setModalAbierto(false);
+          alert("Cliente registrado con éxito\nFolio: " + nuevoCliente.folio);
+        } else {
+          setError(resultado.error || 'Error al registrar el cliente');
+        }
       }
     } catch (err) {
-      console.error('Error registrando cliente:', err);
-      setError('Error al registrar el cliente');
+      console.error(modalMode === 'edit' ? 'Error actualizando cliente:' : 'Error registrando cliente:', err);
+      setError(modalMode === 'edit' ? 'Error al actualizar el cliente' : 'Error al registrar el cliente');
     } finally {
       setGuardando(false);
     }
@@ -132,6 +178,8 @@ export default function ClientesPage() {
     setFormData({ razonSocial: '', rfc: '' });
     setError('');
     setEstaEscaneando(false);
+    setModalMode('create');
+    setClienteEditando(null);
     setModalAbierto(false);
   };
 
@@ -150,20 +198,20 @@ export default function ClientesPage() {
       </div>
 
       {/* FILTROS Y BÚSQUEDA */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-        <div className="relative flex-1">
+      <div className="flex flex-col md:flex-row gap-3 items-center md:justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <div className="relative w-full md:w-80 lg:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
             placeholder="Buscar por Razón Social o RFC..." 
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/15 focus:border-aduanaBlue/30"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
         </div>
         <button
-          onClick={() => setModalAbierto(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-aduanaBlue text-white rounded-lg hover:bg-aduanaBlue/90 transition-colors font-medium"
+          onClick={abrirModalNuevo}
+          className="flex items-center gap-2 px-4 py-2 bg-aduanaBlue/10 text-aduanaBlue border border-aduanaBlue/20 rounded-lg hover:bg-aduanaBlue/15 hover:border-aduanaBlue/30 transition-colors font-medium md:ml-auto"
         >
           <Plus className="w-4 h-4" />
           Registrar Cliente
@@ -217,22 +265,32 @@ export default function ClientesPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={async () => {
-                        const confirmado = window.confirm(`¿Eliminar a ${cliente.razonSocial} de la base de datos?`);
-                        if (!confirmado) return;
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => abrirModalEdicion(cliente)}
+                        className="p-2 text-slate-400 hover:text-aduanaBlue transition-colors"
+                        aria-label={`Editar ${cliente.razonSocial}`}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          const confirmado = window.confirm(`¿Eliminar a ${cliente.razonSocial} de la base de datos?`);
+                          if (!confirmado) return;
 
-                        const resultado = await eliminarCliente(cliente.id);
-                        if (resultado.success) {
-                          setClientes(prev => prev.filter(c => c.id !== cliente.id));
-                        } else {
-                          setError(resultado.error || 'Error al eliminar el cliente');
-                        }
-                      }}
-                      className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                          const resultado = await eliminarCliente(cliente.id);
+                          if (resultado.success) {
+                            setClientes(prev => prev.filter(c => c.id !== cliente.id));
+                          } else {
+                            setError(resultado.error || 'Error al eliminar el cliente');
+                          }
+                        }}
+                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                        aria-label={`Eliminar ${cliente.razonSocial}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -252,7 +310,7 @@ export default function ClientesPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 flex items-center justify-between p-6 border-b border-slate-100 bg-white">
-              <h2 className="text-xl font-bold text-slate-800">Registrar Nuevo Cliente</h2>
+              <h2 className="text-xl font-bold text-slate-800">{modalMode === 'edit' ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}</h2>
               <button
                 onClick={limpiarModal}
                 className="p-1 text-slate-400 hover:text-slate-600"
@@ -335,7 +393,7 @@ export default function ClientesPage() {
                   className="flex-1 px-4 py-2 bg-aduanaBlue text-white rounded-lg hover:bg-aduanaBlue/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {guardando ? <Loader2 className="w-4 h-4 inline animate-spin mr-2" /> : null}
-                  {guardando ? 'Guardando...' : 'Registrar'}
+                  {guardando ? 'Guardando...' : modalMode === 'edit' ? 'Guardar cambios' : 'Registrar'}
                 </button>
               </div>
             </div>
