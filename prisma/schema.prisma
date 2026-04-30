@@ -16,11 +16,28 @@ enum TipoCliente {
   FORWARDER
 }
 
+enum TipoProveedor {
+  LOGISTICA
+  ADUANAL
+  GENERALES
+}
+
 model Cliente {
-  id           Int          @id @default(autoincrement())
-  folio        String       @unique 
-  razonSocial  String
-  rfc          String       @unique
-  tipo         TipoCliente
-  fechaAlta    DateTime     @default(now())
+  id          Int         @id @default(autoincrement())
+  folio       String      @unique
+  razonSocial String
+  rfc         String      @unique
+  tipo        TipoCliente
+  fechaAlta   DateTime    @default(now())
+}
+
+model Proveedores {
+  id            Int           @id @default(autoincrement())
+  tipoProveedor TipoProveedor
+  razonSocial   String
+  rfc           String        @unique
+  correo        String        @unique
+  telefono      String
+  direccion     String
+  fechaAlta     DateTime      @default(now())
 }
