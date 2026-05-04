@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
-  Home, Users, Truck, ChevronDown, ChevronRight 
+  Home, Users, Truck, ChevronDown, ChevronRight, BriefcaseBusiness, UserRound 
 } from "lucide-react"; 
 import Image from "next/image";
 
@@ -85,6 +85,32 @@ export function Sidebar() {
                 </li>
               </ul>
             )}
+          </li>
+          <li className="w-full">
+            <button 
+              onClick={() => toggleSubmenu("operaciones")}
+              className={`flex items-center justify-between py-3 pl-3 pr-4 w-full rounded-xl transition-all ${pathname.includes("/operaciones") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/10"}`}
+            >
+              <div className="flex items-center space-x-4">
+                <BriefcaseBusiness className="w-5 h-5" />
+                <span className="font-medium text-[15px]">Operaciones</span>
+              </div>
+              {openSubmenu === "operaciones" ? <ChevronDown className="w-4 h-4 opacity-50" /> : <ChevronRight className="w-4 h-4 opacity-50" />}
+            </button>
+
+            {openSubmenu === "operaciones" && (
+              <ul className="mt-1 ml-9 space-y-1 border-l border-white/20 pl-2">
+                <li>
+                  <Link href="/operaciones/despacho-aduanal" className="block py-2 text-[14px] text-white/60 hover:text-white transition-colors">Despacho aduanal</Link>
+                </li>
+              </ul>
+            )}
+          </li>
+          <li className="w-full">
+            <Link href="/usuarios" className={`flex items-center justify-start py-3 pl-3 space-x-4 w-full rounded-xl transition-all ${pathname.includes("/usuarios") ? "bg-white/20 text-white" : "text-white/70 hover:bg-white/10"}`}>
+              <UserRound className="w-5 h-5" />
+              <span className="font-medium text-[15px]">Usuarios</span>
+            </Link>
           </li>
 
         </ul>

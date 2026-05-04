@@ -4,6 +4,11 @@ export interface ExtractedPdfData {
   regimen?: string
 }
 
+type PdfTextItem = {
+  str?: string
+  hasEOL?: boolean
+}
+
 export async function extractPdfData(file: File): Promise<ExtractedPdfData> {
   if (typeof window === 'undefined') {
     throw new Error('PDF extraction only available in browser')
@@ -22,10 +27,11 @@ export async function extractPdfData(file: File): Promise<ExtractedPdfData> {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i)
     const textContent = await page.getTextContent()
-    const text = (textContent.items as any[])
-    .filter((item) => 'str' in item)
-    .map((item) => `${item.str ?? ''}${item.hasEOL ? '\n' : ' '}`)
-    .join('')
+    const textItems = textContent.items as PdfTextItem[]
+    const text = textItems
+      .filter((item) => typeof item.str === 'string')
+      .map((item) => `${item.str ?? ''}${item.hasEOL ? '\n' : ' '}`)
+      .join('')
 
     fullText += text + '\n'
   }
