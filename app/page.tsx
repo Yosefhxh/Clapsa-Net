@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Package, Truck, Inbox,  type LucideIcon } from "lucide-react"; // Iconos para los widgets
+import { useState, useEffect } from 'react';
+import { Package, Truck, Inbox, type LucideIcon, Calendar } from "lucide-react";
 
 type StatWidgetProps = {
   title: string;
@@ -24,38 +24,46 @@ function StatWidget({ title, icon: Icon }: StatWidgetProps) {
 }
 
 export default function Home() {
-  const [fechaIngreso] = useState<string>(() => {
-    const INGRESO_KEY = "clapsa-fecha-ingreso";
-    
-    if (typeof window === "undefined") {
-      return "";
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+  
+    const STORAGE_KEY = "clapsa-login-date";
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      localStorage.setItem(STORAGE_KEY, new Date().toISOString());
     }
-    
-    const guardada = localStorage.getItem(INGRESO_KEY);
-    
-    if (guardada) {
-      return guardada;
-    }
-    
-    const ahora = new Date().toLocaleString("es-MX", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-    localStorage.setItem(INGRESO_KEY, ahora);
-    return ahora;
+
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedDate = currentTime.toLocaleString('es-MX', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
   });
 
   return (
     <div>
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-gray-950">Tablero de Operaciones</h1>
-        <p className="text-gray-600 mt-1">
-          Bienvenido a Clapsa Net. {fechaIngreso && <span suppressHydrationWarning className="text-sm text-gray-500">(Ingreso: {fechaIngreso})</span>}
-        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <p className="text-gray-600">
+            Bienvenido a <span className="font-semibold text-aduanaBlue">Clapsa Net</span>
+          </p>
+          <span className="text-gray-300">|</span>
+          <div className="flex items-center gap-1.5 text-gray-500 text-sm">
+            <Calendar className="w-4 h-4" />
+            <span suppressHydrationWarning>Ingreso: {formattedDate}</span>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -66,10 +74,13 @@ export default function Home() {
         <StatWidget title="Cartas Abiertas" icon={Inbox} />
         <StatWidget title="Cartas Cerradas" icon={Inbox} />
       </div>
-       <div className="mt-12 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-semibold mb-6">Últimas Operaciones</h2>
-            <p className="text-sm text-gray-500 text-center py-10">Aquí iría la tabla de operaciones recientes...</p>
-       </div>
+
+      <div className="mt-12 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+        <h2 className="text-xl font-semibold mb-6">Últimas Operaciones</h2>
+        <p className="text-sm text-gray-500 text-center py-10">
+          Aquí iría la tabla de operaciones recientes...
+        </p>
+      </div>
     </div>
   );
 }
