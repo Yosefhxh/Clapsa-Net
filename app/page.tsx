@@ -1,9 +1,13 @@
+"use client";
+
+import { useState } from "react";
 import { Package, Truck, Inbox,  type LucideIcon } from "lucide-react"; // Iconos para los widgets
 
 type StatWidgetProps = {
   title: string;
   icon: LucideIcon;
 };
+
 function StatWidget({ title, icon: Icon }: StatWidgetProps) {
   return (
     <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
@@ -20,11 +24,38 @@ function StatWidget({ title, icon: Icon }: StatWidgetProps) {
 }
 
 export default function Home() {
+  const [fechaIngreso] = useState<string>(() => {
+    const INGRESO_KEY = "clapsa-fecha-ingreso";
+    
+    if (typeof window === "undefined") {
+      return "";
+    }
+    
+    const guardada = localStorage.getItem(INGRESO_KEY);
+    
+    if (guardada) {
+      return guardada;
+    }
+    
+    const ahora = new Date().toLocaleString("es-MX", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    localStorage.setItem(INGRESO_KEY, ahora);
+    return ahora;
+  });
+
   return (
     <div>
       <div className="mb-10">
-        <h1 className="text-3xl font-bold text-gray-950">Dashboard de Operaciones</h1>
-        <p className="text-gray-600 mt-1">Resumen general de tu tráfico aduanero.</p>
+        <h1 className="text-3xl font-bold text-gray-950">Tablero de Operaciones</h1>
+        <p className="text-gray-600 mt-1">
+          Bienvenido a Clapsa Net. {fechaIngreso && <span className="text-sm text-gray-500">(Ingreso: {fechaIngreso})</span>}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
