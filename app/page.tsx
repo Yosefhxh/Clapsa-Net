@@ -53,7 +53,7 @@ export default function Home() {
     <div>
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-gray-950">Tablero de Operaciones</h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-gray-600 mt-1" suppressHydrationWarning>
           Bienvenido a Clapsa Net. {fechaIngreso && <span className="text-sm text-gray-500">(Ingreso: {fechaIngreso})</span>}
         </p>
       </div>
