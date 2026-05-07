@@ -1,86 +1,15 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Package, Truck, Inbox, type LucideIcon, Calendar } from "lucide-react";
-
-type StatWidgetProps = {
-  title: string;
-  icon: LucideIcon;
-};
-
-function StatWidget({ title, icon: Icon }: StatWidgetProps) {
-  return (
-    <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-600">{title}</h3>
-        <div className="p-2.5 rounded-full bg-blue-50">
-            <Icon className="w-5 h-5 text-aduanaBlue"/>
-        </div>
-      </div>
-      <p className="text-4xl font-bold text-gray-900">0</p>
-      <p className="text-xs text-gray-500 mt-1">Operaciones hoy</p>
-    </div>
-  );
-}
+import { DashboardHeader } from "./components/home/DashboardHeader";
+import { StatisticsGrid } from "./components/home/StatisticsGrid";
+import { RecentOperationsSection } from "./components/home/RecentOperationsSection";
 
 export default function Home() {
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  useEffect(() => {
-  
-    const STORAGE_KEY = "clapsa-login-date";
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      localStorage.setItem(STORAGE_KEY, new Date().toISOString());
-    }
-
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const formattedDate = currentTime.toLocaleString('es-MX', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  });
-
   return (
     <div>
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-gray-950">Tablero de Operaciones</h1>
-        <div className="flex items-center gap-2 mt-1">
-          <p className="text-gray-600">
-            Bienvenido a <span className="font-semibold text-aduanaBlue">Clapsa Net</span>
-          </p>
-          <span className="text-gray-300">|</span>
-          <div className="flex items-center gap-1.5 text-gray-500 text-sm">
-            <Calendar className="w-4 h-4" />
-            <span suppressHydrationWarning>Ingreso: {formattedDate}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <StatWidget title="Por despachar" icon={Package} />
-        <StatWidget title="Ambos" icon={Package} />
-        <StatWidget title="En vacío" icon={Inbox} />
-        <StatWidget title="Tráfico Activo" icon={Truck} />
-        <StatWidget title="Cartas Abiertas" icon={Inbox} />
-        <StatWidget title="Cartas Cerradas" icon={Inbox} />
-      </div>
-
-      <div className="mt-12 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-        <h2 className="text-xl font-semibold mb-6">Últimas Operaciones</h2>
-        <p className="text-sm text-gray-500 text-center py-10">
-          Aquí iría la tabla de operaciones recientes...
-        </p>
-      </div>
+      <DashboardHeader />
+      <StatisticsGrid />
+      <RecentOperationsSection />
     </div>
   );
 }

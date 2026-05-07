@@ -193,8 +193,8 @@ export default function ClientesPage() {
     <div className="space-y-8">
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Gestión de Clientes Forwarder</h1>
-        <p className="text-slate-500 text-sm">Administra los clientes registrados en tu base de datos.</p>
+        <h1 className="text-2xl font-bold text-slate-800">Clientes Forwarder</h1>
+        <p className="text-slate-500 text-sm">Administracion de clientes forwarder Clapsa.</p>
       </div>
 
       {/* FILTROS Y BÚSQUEDA */}

@@ -6,7 +6,7 @@ import { User } from "lucide-react";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CLAPSA NET - Dashboard",
+  title: "CLAPSA NET - Tablero de Operaciones",
   description: "Gestión eficiente de operaciones aduaneras",
 };
 
