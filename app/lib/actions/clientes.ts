@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client';
 import { generarSiguienteFolio } from '../utils/folios';
 import { revalidatePath } from 'next/cache';
 
-export async function registrarCliente(datos: { razonSocial: string; rfc: string; tipo: 'DIRECTO' | 'FORWARDER' }) {
+export async function registrarCliente(datos: { razonSocial: string; rfc: string; domicilio: string; tipo: 'DIRECTO' | 'FORWARDER' }) {
 	try {
 		const nuevoFolio = await generarSiguienteFolio(datos.tipo);
 
@@ -14,6 +14,7 @@ export async function registrarCliente(datos: { razonSocial: string; rfc: string
 				folio: nuevoFolio,
 				razonSocial: datos.razonSocial,
 				rfc: datos.rfc,
+				domicilio: datos.domicilio,
 				tipo: datos.tipo,
 			},
 		});
@@ -36,13 +37,14 @@ export async function registrarCliente(datos: { razonSocial: string; rfc: string
 	}
 }
 
-export async function actualizarCliente(id: number, datos: { razonSocial: string; rfc: string; tipo: 'DIRECTO' | 'FORWARDER' }) {
+export async function actualizarCliente(id: number, datos: { razonSocial: string; rfc: string; domicilio: string; tipo: 'DIRECTO' | 'FORWARDER' }) {
 	try {
 		const cliente = await prisma.cliente.update({
 			where: { id },
 			data: {
 				razonSocial: datos.razonSocial,
 				rfc: datos.rfc,
+				domicilio: datos.domicilio,
 				tipo: datos.tipo,
 			},
 		});

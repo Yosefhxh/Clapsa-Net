@@ -12,7 +12,7 @@ export function SidebarHeader() {
             width={180}
             height={70}
             priority
-            className="object-contain"
+            className="object-contain h-16 w-auto"
           />
         </Link>
       </div>

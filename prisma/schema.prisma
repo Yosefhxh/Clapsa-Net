@@ -27,6 +27,7 @@ model Cliente {
   folio       String      @unique
   razonSocial String
   rfc         String      @unique
+  domicilio   String      @default("No especificado")
   tipo        TipoCliente
   fechaAlta   DateTime    @default(now())
 }

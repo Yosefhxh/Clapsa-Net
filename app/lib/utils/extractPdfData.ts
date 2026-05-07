@@ -1,7 +1,7 @@
 export interface ExtractedPdfData {
   razonSocial: string
   rfc: string
-  regimen?: string
+  domicilio?: string
 }
 
 type PdfTextItem = {
@@ -14,9 +14,7 @@ export async function extractPdfData(file: File): Promise<ExtractedPdfData> {
     throw new Error('PDF extraction only available in browser')
   }
 
-  const pdfjsModule = await import('pdfjs-dist')
-  const pdfjsLib = pdfjsModule as typeof import('pdfjs-dist')
-
+  const pdfjsLib = await import('pdfjs-dist')
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js'
 
   const arrayBuffer = await file.arrayBuffer()
@@ -43,7 +41,7 @@ function parseConstanciaFiscal(text: string): ExtractedPdfData {
   const data: ExtractedPdfData = {
     razonSocial: '',
     rfc: '',
-    regimen: ''
+    domicilio: ''
   }
 
   // Mantenemos tus utilidades de limpieza
@@ -61,7 +59,7 @@ function parseConstanciaFiscal(text: string): ExtractedPdfData {
 
   const cleanupValue = (value: string) =>
     normalizeName(
-      value.replace(/\b(RFC|CURP|DOMICILIO|ESTATUS|FECHA|FOLIO|C[ÓO]DIGO|DATOS|IDENTIFICACI[ÓO]N|SITUACI[ÓO]N|OBLIGACIONES|R[ÉE]GIMEN|REGIMEN|NOMBRE COMERCIAL)\b.*$/i, '')
+      value.replace(/\b(RFC|CURP|DOMICILIO|ESTATUS|FECHA|FOLIO|C[ÓO]DIGO|DATOS|IDENTIFICACI[ÓO]N|SITUACI[ÓO]N|OBLIGACIONES|NOMBRE COMERCIAL)\b.*$/i, '')
     )
 
   // Ajuste en getFieldValue para manejar mejor los separadores del SAT (|)
@@ -86,6 +84,39 @@ function parseConstanciaFiscal(text: string): ExtractedPdfData {
         }
       }
     }
+    return ''
+  }
+
+  const getDomicilio = (scopeLines: string[]) => {
+    for (let index = 0; index < scopeLines.length; index++) {
+      const line = scopeLines[index]
+
+      if (!/DOMICILIO(?:\s+FISCAL)?/i.test(line)) {
+        continue
+      }
+
+      const collected: string[] = []
+      const inlineValue = line.replace(/^.*DOMICILIO(?:\s+FISCAL)?\s*[:|]?\s*/i, '')
+      if (inlineValue.trim()) {
+        collected.push(inlineValue.trim())
+      }
+
+      for (let next = index + 1; next < scopeLines.length && collected.length < 4; next++) {
+        const nextLine = scopeLines[next]
+        if (/^(RFC|CURP|ESTATUS|FECHA|FOLIO|PRIMER APELLIDO|SEGUNDO APELLIDO|APELLIDO PATERNO|APELLIDO MATERNO|NOMBRE COMERCIAL|REGISTRO FEDERAL|R[ÉE]GIMEN|OBLIGACIONES)/i.test(nextLine)) {
+          break
+        }
+
+        collected.push(nextLine)
+      }
+
+      const combined = collected.join(' ')
+      const cleaned = cleanupValue(combined).replace(/\s+/g, ' ').trim()
+      if (cleaned) {
+        return cleaned
+      }
+    }
+
     return ''
   }
 
@@ -183,38 +214,10 @@ function parseConstanciaFiscal(text: string): ExtractedPdfData {
     data.razonSocial = 'No especificada'
   }
 
-  const regimenesPatterns = [
-    /General\s+de\s+Ley\s+Personas\s+Morales/i,
-    /Personas\s+Morales\s+con\s+Actividad\s+Empresarial/i,
-    /Personas\s+Morales\s+sin\s+Actividad\s+Empresarial/i,
-    /Personas\s+Físicas\s+con\s+Actividad\s+Empresarial/i,
-    /Personas\s+Físicas\s+sin\s+Actividad\s+Empresarial/i,
-    /Régimen\s+de\s+Incorporación\s+Fiscal/i,
-    /Pequeño\s+Contribuyente/i,
-    /Régimen\s+Tributario\s+Simplificado/i,
-    /Régimen\s+General/i,
-    /General\s+de\s+Ley/i
-  ]
+  const domicilio = getDomicilio(lineas)
+  data.domicilio = domicilio || 'No especificado'
 
-  for (const pattern of regimenesPatterns) {
-    const match = cleanText.match(pattern)
-    if (match) {
-      data.regimen = match[0]
-      break
-    }
-  }
-
-  if (!data.regimen) {
-    if (cleanText.includes('General')) {
-      data.regimen = 'General de Ley'
-    } else if (cleanText.includes('Empresarial')) {
-      data.regimen = 'Con Actividad Empresarial'
-    } else if (cleanText.includes('Simplificado')) {
-      data.regimen = 'Régimen Simplificado'
-    }
-  }
-
-  console.log('Extracción PDF Debug:', { rfc: data.rfc, razonSocial: data.razonSocial, regimen: data.regimen })
+  console.log('Extracción PDF Debug:', { rfc: data.rfc, razonSocial: data.razonSocial, domicilio: data.domicilio })
 
   return data
 }
