@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useDropzone } from 'react-dropzone';
 import {
@@ -10,15 +10,18 @@ import {
   Loader2,
   Plus,
   Search,
+  SlidersHorizontal,
   Trash2,
   Upload,
   X,
 } from 'lucide-react';
 import { extractPdfData } from '@/app/lib/utils/extractPdfData';
+import { ESTADOS_MEXICO, obtenerEstadoDesdeDireccion } from '@/app/lib/utils/estadosMexico';
 
 type TipoProveedor = 'LOGISTICA' | 'ADUANAL' | 'GENERALES';
 
 type FuenteAlta = 'manual' | 'constancia';
+type OrdenProveedor = 'az' | 'za' | 'estado';
 
 interface Proveedor {
   id: number;
@@ -69,6 +72,8 @@ function formatFechaAlta(fechaAlta: string) {
 export default function ProveedoresAltaPage() {
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [busqueda, setBusqueda] = useState('');
+  const [orden, setOrden] = useState<OrdenProveedor>('az');
+  const [estadoFiltro, setEstadoFiltro] = useState('');
   const [error, setError] = useState('');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [estaEscaneando, setEstaEscaneando] = useState(false);
@@ -92,6 +97,12 @@ export default function ProveedoresAltaPage() {
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(proveedores));
   }, [proveedores]);
+
+  useEffect(() => {
+    if (orden !== 'estado' && estadoFiltro) {
+      setEstadoFiltro('');
+    }
+  }, [orden, estadoFiltro]);
 
   const onDropModal = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -207,15 +218,52 @@ export default function ProveedoresAltaPage() {
     setProveedores((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const proveedoresFiltrados = proveedores.filter((proveedor) => {
-    const term = busqueda.toLowerCase();
-    return (
-      proveedor.razonSocial.toLowerCase().includes(term) ||
-      proveedor.rfc.toLowerCase().includes(term) ||
-      proveedor.correo.toLowerCase().includes(term) ||
-      proveedor.tipoProveedor.toLowerCase().includes(term)
-    );
-  });
+  const normalize = (value: string) =>
+    value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+
+  const proveedoresFiltrados = useMemo(() => {
+    const term = normalize(busqueda);
+
+    const filtrados = proveedores.filter((proveedor) => {
+      const estadoProveedor = obtenerEstadoDesdeDireccion(proveedor.direccion);
+
+      if (estadoFiltro && normalize(estadoProveedor) !== normalize(estadoFiltro)) {
+        return false;
+      }
+
+      return (
+        normalize(proveedor.razonSocial).includes(term) ||
+        normalize(proveedor.rfc).includes(term) ||
+        normalize(proveedor.correo).includes(term) ||
+        normalize(proveedor.tipoProveedor).includes(term) ||
+        normalize(proveedor.direccion).includes(term)
+      );
+    });
+
+    const comparar = (left: string, right: string) =>
+      left.localeCompare(right, 'es', { sensitivity: 'base', numeric: true });
+
+    return [...filtrados].sort((a, b) => {
+      switch (orden) {
+        case 'za':
+          return comparar(b.razonSocial, a.razonSocial);
+        case 'estado': {
+          const estadoA = obtenerEstadoDesdeDireccion(a.direccion);
+          const estadoB = obtenerEstadoDesdeDireccion(b.direccion);
+          const estadoCompare = comparar(estadoA, estadoB);
+
+          return estadoCompare !== 0 ? estadoCompare : comparar(a.razonSocial, b.razonSocial);
+        }
+        case 'az':
+        default:
+          return comparar(a.razonSocial, b.razonSocial);
+      }
+    });
+  }, [busqueda, estadoFiltro, orden, proveedores]);
 
   return (
     <div className="space-y-8">
@@ -224,20 +272,56 @@ export default function ProveedoresAltaPage() {
         <p className="text-slate-500 text-sm">Registra y consulta los proveedores dados de alta desde constancia fiscal o captura manual.</p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-3 items-center md:justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-        <div className="relative w-full md:w-80 lg:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por razón social, RFC, correo o tipo..."
-            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/15 focus:border-aduanaBlue/30"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:flex-1 md:items-center">
+          <div className="relative w-full md:max-w-md lg:max-w-lg">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar por razón social, RFC o dirección..."
+              className="h-11 w-full rounded-lg border border-slate-200 py-2 pl-10 pr-4 focus:border-aduanaBlue/30 focus:outline-none focus:ring-2 focus:ring-aduanaBlue/15"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+
+          <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+            <div className="relative w-full md:w-[250px]">
+              <SlidersHorizontal className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <select
+                value={orden}
+                onChange={(e) => setOrden(e.target.value as OrdenProveedor)}
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 focus:border-aduanaBlue/30 focus:outline-none focus:ring-2 focus:ring-aduanaBlue/15"
+                aria-label="Ordenar proveedores"
+              >
+                <option value="az">A-Z</option>
+                <option value="za">Z-A</option>
+                <option value="estado">Domicilio por estado</option>
+              </select>
+            </div>
+
+            {orden === 'estado' && (
+              <div className="relative w-full md:w-[250px]">
+                <select
+                  value={estadoFiltro}
+                  onChange={(e) => setEstadoFiltro(e.target.value)}
+                  className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-aduanaBlue/30 focus:outline-none focus:ring-2 focus:ring-aduanaBlue/15"
+                  aria-label="Filtrar proveedores por estado"
+                >
+                  <option value="">Todos los estados</option>
+                  {ESTADOS_MEXICO.map((estado) => (
+                    <option key={estado} value={estado}>
+                      {estado}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
         <button
           onClick={abrirModal}
-          className="flex items-center gap-2 px-4 py-2 bg-aduanaBlue/10 text-aduanaBlue border border-aduanaBlue/20 rounded-lg hover:bg-aduanaBlue/15 hover:border-aduanaBlue/30 transition-colors font-medium md:ml-auto"
+          className="flex items-center gap-2 rounded-lg border border-aduanaBlue/20 bg-aduanaBlue/10 px-4 py-2 font-medium text-aduanaBlue transition-colors hover:border-aduanaBlue/30 hover:bg-aduanaBlue/15 lg:ml-auto"
         >
           <Plus className="w-4 h-4" />
           Registrar Proveedor

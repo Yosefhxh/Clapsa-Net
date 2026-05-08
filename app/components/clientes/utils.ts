@@ -1,3 +1,5 @@
+import { obtenerEstadoDesdeDireccion } from "@/app/lib/utils/estadosMexico";
+
 export function construirDomicilio(calle: string, estado: string, codigoPostal: string) {
   const partes = [calle.trim(), estado.trim(), codigoPostal.trim()].filter(Boolean)
   return partes.length > 0 ? partes.join(', ') : 'No especificado'
@@ -30,4 +32,9 @@ export function descomponerDomicilio(domicilio: string) {
     estado: '',
     codigoPostal: postalMatch?.[0] ?? '',
   }
+}
+
+export function obtenerEstadoDomicilio(domicilio: string) {
+  const partes = descomponerDomicilio(domicilio)
+  return partes.estado || obtenerEstadoDesdeDireccion(domicilio)
 }

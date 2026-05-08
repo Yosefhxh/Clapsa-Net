@@ -19,14 +19,14 @@ export function SidebarMenuContent() {
   };
 
   return (
-    <>
-      <div className="py-4 w-full">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="w-full py-4">
         <h2 className="text-center text-[15px] font-medium text-white/50">
           Menu Principal
         </h2>
       </div>
-      <div className="flex-1 px-6">
-        <ul className="flex flex-col w-full space-y-1">
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+        <ul className="flex w-full flex-col space-y-1">
           <MenuItem
             href="/"
             label="Home"
@@ -40,6 +40,7 @@ export function SidebarMenuContent() {
             isOpen={openSubmenu === "clientes"}
             onToggle={() => toggleSubmenu("clientes")}
             isActive={pathname.includes("/clientes")}
+            defaultHref="/clientes/directo"
             submenuItems={[
               { href: "/clientes/directo", label: "Directo" },
               { href: "/clientes/forwarder", label: "Forwarder" },
@@ -52,6 +53,7 @@ export function SidebarMenuContent() {
             isOpen={openSubmenu === "proveedores"}
             onToggle={() => toggleSubmenu("proveedores")}
             isActive={pathname.includes("/proveedores")}
+            defaultHref="/proveedores/busqueda"
             submenuItems={[
               { href: "/proveedores/alta", label: "Alta" },
               { href: "/proveedores/busqueda", label: "Búsqueda" },
@@ -64,6 +66,7 @@ export function SidebarMenuContent() {
             isOpen={openSubmenu === "operaciones"}
             onToggle={() => toggleSubmenu("operaciones")}
             isActive={pathname.includes("/operaciones")}
+            defaultHref="/operaciones/despacho-aduanal"
             submenuItems={[
               {
                 href: "/operaciones/despacho-aduanal",
@@ -80,6 +83,6 @@ export function SidebarMenuContent() {
           />
         </ul>
       </div>
-    </>
+    </div>
   );
 }

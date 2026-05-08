@@ -24,7 +24,7 @@ export function ClientesTable({
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-100">
-            <th className="px-6 py-4 text-sm font-semibold text-slate-600">Folio</th>
+            <th className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-600">Folio</th>
             <th className="px-6 py-4 text-sm font-semibold text-slate-600">Razón Social</th>
             <th className="px-6 py-4 text-sm font-semibold text-slate-600">RFC</th>
             <th className="px-6 py-4 text-sm font-semibold text-slate-600">Domicilio</th>
@@ -36,7 +36,7 @@ export function ClientesTable({
           {clientes.length > 0 ? (
             clientes.map((cliente) => (
               <tr key={cliente.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4 text-slate-700 font-mono text-sm font-medium">{cliente.folio}</td>
+                <td className="whitespace-nowrap px-6 py-4 text-slate-700 font-mono text-sm font-medium">{cliente.folio}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-50 rounded-lg">

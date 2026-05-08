@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   actualizarCliente,
   eliminarCliente,
@@ -11,9 +11,9 @@ import { Cliente, FormDataCliente, ModalMode, TipoCliente } from "./types";
 import { ClientesErrorAlert } from "./ClientesErrorAlert";
 import { ClientesModal } from "./ClientesModal";
 import { ClientesPageHeader } from "./ClientesPageHeader";
-import { ClientesSearchBar } from "./ClientesSearchBar";
+import { ClientesSearchBar, ClientesSortOption } from "./ClientesSearchBar";
 import { ClientesTable } from "./ClientesTable";
-import { construirDomicilio, descomponerDomicilio } from "./utils";
+import { construirDomicilio, descomponerDomicilio, obtenerEstadoDomicilio } from "./utils";
 
 interface ClientesManagementPageProps {
   tipoCliente: TipoCliente;
@@ -24,6 +24,8 @@ interface ClientesManagementPageProps {
 export function ClientesManagementPage({ tipoCliente, title, description }: ClientesManagementPageProps) {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState("");
+  const [sortBy, setSortBy] = useState<ClientesSortOption>("az");
+  const [estadoFiltro, setEstadoFiltro] = useState("");
   const [estaEscaneando, setEstaEscaneando] = useState(false);
   const [error, setError] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -50,6 +52,12 @@ export function ClientesManagementPage({ tipoCliente, title, description }: Clie
 
     cargarClientes();
   }, [tipoCliente]);
+
+  useEffect(() => {
+    if (sortBy !== "estado" && estadoFiltro) {
+      setEstadoFiltro("");
+    }
+  }, [sortBy, estadoFiltro]);
 
   const abrirModalNuevo = () => {
     setModalMode("create");
@@ -164,9 +172,53 @@ export function ClientesManagementPage({ tipoCliente, title, description }: Clie
     }
   };
 
-  const clientesFiltrados = clientes.filter((cliente) => {
-    return cliente.razonSocial.toLowerCase().includes(busqueda.toLowerCase()) || cliente.rfc.includes(busqueda.toUpperCase());
-  });
+  const normalize = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+  const clientesFiltrados = useMemo(() => {
+    const term = normalize(busqueda);
+
+    const filtrados = clientes.filter((cliente) => {
+      const estadoCliente = obtenerEstadoDomicilio(cliente.domicilio);
+
+      if (estadoFiltro && normalize(estadoCliente) !== normalize(estadoFiltro)) {
+        return false;
+      }
+
+      return (
+        normalize(cliente.razonSocial).includes(term) ||
+        normalize(cliente.rfc).includes(term) ||
+        normalize(cliente.domicilio).includes(term)
+      );
+    });
+
+    return [...filtrados].sort((a, b) => {
+      const stringCompare = (left: string, right: string) =>
+        left.localeCompare(right, "es", { sensitivity: "base", numeric: true });
+
+      switch (sortBy) {
+        case "za":
+          return stringCompare(b.razonSocial, a.razonSocial);
+        case "folioAsc":
+          return stringCompare(a.folio, b.folio);
+        case "az":
+        default:
+          return stringCompare(a.razonSocial, b.razonSocial);
+        case "folioDesc":
+          return stringCompare(b.folio, a.folio);
+        case "estado": {
+          const estadoA = obtenerEstadoDomicilio(a.domicilio);
+          const estadoB = obtenerEstadoDomicilio(b.domicilio);
+          const estadoCompare = stringCompare(estadoA, estadoB);
+          return estadoCompare !== 0 ? estadoCompare : stringCompare(a.razonSocial, b.razonSocial);
+        }
+      }
+    });
+  }, [busqueda, clientes, sortBy, estadoFiltro]);
 
   return (
     <div className="space-y-8">
@@ -176,6 +228,10 @@ export function ClientesManagementPage({ tipoCliente, title, description }: Clie
         busqueda={busqueda}
         onBusquedaChange={setBusqueda}
         onRegistrarCliente={abrirModalNuevo}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        estadoFiltro={estadoFiltro}
+        onEstadoFiltroChange={setEstadoFiltro}
       />
 
       <ClientesErrorAlert error={error} />

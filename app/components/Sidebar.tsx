@@ -6,7 +6,7 @@ import { SidebarMenuContent } from "./sidebar/SidebarMenuContent";
 
 export function Sidebar() {
   return (
-    <div className="flex flex-col h-full bg-[#242B83] w-64 text-white shadow-lg">
+    <div className="flex h-screen w-64 flex-col bg-[#242B83] text-white shadow-lg">
       <SidebarHeader />
       <SidebarMenuContent />
     </div>
