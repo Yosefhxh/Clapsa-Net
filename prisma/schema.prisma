@@ -22,6 +22,22 @@ enum TipoProveedor {
   GENERALES
 }
 
+enum FuenteAltaProveedor {
+  MANUAL
+  CONSTANCIA
+}
+
+enum TipoUsuario {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum EstadoUsuario {
+  ACTIVO
+  INACTIVO
+}
+
 model Cliente {
   id          Int         @id @default(autoincrement())
   folio       String      @unique
@@ -40,5 +56,17 @@ model Proveedores {
   correo        String        @unique
   telefono      String
   direccion     String
+  fuenteAlta    FuenteAltaProveedor @default(MANUAL)
   fechaAlta     DateTime      @default(now())
+}
+
+model Usuario {
+  id           Int           @id @default(autoincrement())
+  nombre       String
+  correo       String        @unique
+  tipoUsuario   TipoUsuario   @default(VIEWER)
+  estado       EstadoUsuario  @default(ACTIVO)
+  passwordHash String
+  fechaRegistro DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
