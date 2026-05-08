@@ -1,116 +1,78 @@
 'use server';
 
-import { Prisma } from '@prisma/client';
-import { revalidatePath } from 'next/cache';
 import prisma from '@/app/lib/prisma';
+import { Prisma, TipoProveedor } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
 
-type TipoProveedor = 'LOGISTICA' | 'ADUANAL' | 'GENERALES';
-type FuenteAltaProveedor = 'MANUAL' | 'CONSTANCIA';
+export async function registrarProveedor(datos: {
+    razonSocial: string;
+    tipoProveedor: TipoProveedor;
+    rfc: string;
+    correo: string;
+    telefono: string;
+    direccion: string;
+}) {
+    try {
+        const proveedor = await prisma.proveedores.create({
+            data: {
+                razonSocial: datos.razonSocial,
+                tipoProveedor: datos.tipoProveedor,
+                rfc: datos.rfc,
+                correo: datos.correo,
+                telefono: datos.telefono,
+                direccion: datos.direccion,
+            },
+        });
 
-export interface ProveedorDTO {
-  id: number;
-  razonSocial: string;
-  tipoProveedor: TipoProveedor;
-  rfc: string;
-  correo: string;
-  telefono: string;
-  direccion: string;
-  fuente: 'manual' | 'constancia';
-  fechaAlta: string;
-}
+        // Revalidamos las rutas donde se muestran proveedores
+        revalidatePath('/proveedores/alta');
+        revalidatePath('/proveedores/busqueda');
 
-function mapProveedor(proveedor: {
-  id: number;
-  razonSocial: string;
-  tipoProveedor: TipoProveedor;
-  rfc: string;
-  correo: string;
-  telefono: string;
-  direccion: string;
-  fuenteAlta: FuenteAltaProveedor;
-  fechaAlta: Date;
-}): ProveedorDTO {
-  return {
-    id: proveedor.id,
-    razonSocial: proveedor.razonSocial,
-    tipoProveedor: proveedor.tipoProveedor,
-    rfc: proveedor.rfc,
-    correo: proveedor.correo,
-    telefono: proveedor.telefono,
-    direccion: proveedor.direccion,
-    fuente: proveedor.fuenteAlta === 'CONSTANCIA' ? 'constancia' : 'manual',
-    fechaAlta: proveedor.fechaAlta.toISOString(),
-  };
+        return { success: true, proveedor };
+    } catch (error: unknown) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            // Error P2002: Violación de restricción única (RFC o Correo ya existen)
+            if (error.code === 'P2002') {
+                const target = (error.meta?.target as string[]) || [];
+                const campo = target.includes('rfc') ? 'RFC' : 'Correo';
+                return { success: false, error: `El ${campo} ya existe en la base de datos` };
+            }
+            return { success: false, error: `Error de base de datos (${error.code})` };
+        }
+
+        console.error('Error registrarProveedor:', error);
+        return { success: false, error: 'Error al registrar el proveedor' };
+    }
 }
 
 export async function obtenerProveedores() {
-  const proveedores = await prisma.proveedores.findMany({
-    orderBy: { id: 'desc' },
-  });
-
-  return proveedores.map(mapProveedor);
+    try {
+        return await prisma.proveedores.findMany({
+            orderBy: { id: 'desc' },
+        });
+    } catch (error) {
+        console.error('Error obtenerProveedores:', error);
+        return [];
+    }
 }
 
-export async function registrarProveedor(datos: {
-  razonSocial: string;
-  tipoProveedor: TipoProveedor;
-  rfc: string;
-  correo: string;
-  telefono: string;
-  direccion: string;
-  fuenteAlta: FuenteAltaProveedor;
-}) {
-  try {
-    const proveedor = await prisma.proveedores.create({
-      data: {
-        razonSocial: datos.razonSocial,
-        tipoProveedor: datos.tipoProveedor,
-        rfc: datos.rfc,
-        correo: datos.correo,
-        telefono: datos.telefono,
-        direccion: datos.direccion,
-        fuenteAlta: datos.fuenteAlta,
-      },
-    });
+export async function eliminarProveedorAction(id: number) {
+    try {
+        await prisma.proveedores.delete({
+            where: { id },
+        });
 
-    revalidatePath('/proveedores/alta');
-    revalidatePath('/proveedores/busqueda');
+        revalidatePath('/proveedores/alta');
+        revalidatePath('/proveedores/busqueda');
 
-    return { success: true, proveedor: mapProveedor(proveedor) };
-  } catch (error: unknown) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return { success: false, error: 'RFC o correo ya existe en la base de datos' };
-      }
-
-      return { success: false, error: `Error de base de datos (${error.code})` };
+        return { success: true };
+    } catch (error: unknown) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2025') {
+                return { success: false, error: 'El proveedor ya no existe' };
+            }
+            return { success: false, error: `Error de base de datos (${error.code})` };
+        }
+        return { success: false, error: 'Error al eliminar proveedor' };
     }
-
-    console.error('Error registrarProveedor:', error);
-    return { success: false, error: 'Error al registrar proveedor' };
-  }
-}
-
-export async function eliminarProveedor(id: number) {
-  try {
-    await prisma.proveedores.delete({
-      where: { id },
-    });
-
-    revalidatePath('/proveedores/alta');
-    revalidatePath('/proveedores/busqueda');
-
-    return { success: true };
-  } catch (error: unknown) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2025') {
-        return { success: false, error: 'El proveedor ya no existe en la base de datos' };
-      }
-
-      return { success: false, error: `Error de base de datos (${error.code})` };
-    }
-
-    console.error('Error eliminarProveedor:', error);
-    return { success: false, error: 'Error al eliminar proveedor' };
-  }
 }

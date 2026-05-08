@@ -1,151 +1,91 @@
 'use server';
 
-import crypto from 'crypto';
-import { Prisma } from '@prisma/client';
-import { revalidatePath } from 'next/cache';
 import prisma from '@/app/lib/prisma';
+import { Prisma, TipoUsuario, EstadoUsuario } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
 
-type TipoUsuario = 'ADMIN' | 'EDITOR' | 'VIEWER';
-type EstadoUsuario = 'ACTIVO' | 'INACTIVO';
-
-export interface UsuarioDTO {
-  id: number;
+interface UsuarioFormData {
   nombre: string;
   correo: string;
   tipoUsuario: TipoUsuario;
   estado: 'activo' | 'inactivo';
-  fechaRegistro: string;
+  password?: string;
 }
 
-function hashPassword(password: string) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
-  return `${salt}:${derived}`;
-}
+export async function gestionarUsuario(datos: UsuarioFormData, id?: number) {
+    try {
+        // Acceso seguro al modelo usuario de Prisma
+        const dataToSave: Prisma.UsuarioUpdateInput = {
+            nombre: datos.nombre,
+            correo: datos.correo,
+            tipoUsuario: datos.tipoUsuario,
+            // Convertimos el string del front ('activo') al valor del Enum (ACTIVO)
+            estado: datos.estado.toUpperCase() === 'ACTIVO' ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO,
+            ...(datos.password && { passwordHash: datos.password }) // Usamos passwordHash según tu esquema
+        };
 
-function mapUsuario(usuario: {
-  id: number;
-  nombre: string;
-  correo: string;
-  tipoUsuario: TipoUsuario;
-  estado: EstadoUsuario;
-  fechaRegistro: Date;
-}): UsuarioDTO {
-  return {
-    id: usuario.id,
-    nombre: usuario.nombre,
-    correo: usuario.correo,
-    tipoUsuario: usuario.tipoUsuario,
-    estado: usuario.estado === 'ACTIVO' ? 'activo' : 'inactivo',
-    fechaRegistro: usuario.fechaRegistro.toISOString(),
-  };
+        if (id) {
+            await prisma.usuario.update({
+                where: { id: Number(id) },
+                data: dataToSave,
+            });
+        } else {
+            await prisma.usuario.create({
+                data: {
+                    nombre: datos.nombre,
+                    correo: datos.correo,
+                    tipoUsuario: datos.tipoUsuario,
+                    estado: datos.estado.toUpperCase() === 'ACTIVO' ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO,
+                    passwordHash: datos.password || '',
+                },
+            });
+        }
+
+        revalidatePath('/usuarios');
+        return { success: true };
+
+    } catch (error: unknown) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2002') {
+                return { success: false, error: 'El correo electrónico ya está registrado' };
+            }
+            return { success: false, error: `Error de base de datos (${error.code})` };
+        }
+        
+        console.error('Error en gestionarUsuario:', error);
+        return { success: false, error: 'Ocurrió un error inesperado' };
+    }
 }
 
 export async function obtenerUsuarios() {
-  const usuarios = await prisma.usuario.findMany({
-    orderBy: { id: 'desc' },
-  });
-
-  return usuarios.map(mapUsuario);
+    try {
+        const usuarios = await prisma.usuario.findMany({
+            orderBy: { fechaRegistro: 'desc' },
+        });
+        
+        return usuarios;
+    } catch (error) {
+        console.error('Error al obtener usuarios:', error);
+        return [];
+    }
 }
 
-export async function registrarUsuario(datos: {
-  nombre: string;
-  correo: string;
-  tipoUsuario: TipoUsuario;
-  estado: 'activo' | 'inactivo';
-  password: string;
-}) {
-  try {
-    const usuario = await prisma.usuario.create({
-      data: {
-        nombre: datos.nombre,
-        correo: datos.correo,
-        tipoUsuario: datos.tipoUsuario,
-        estado: datos.estado === 'activo' ? 'ACTIVO' : 'INACTIVO',
-        passwordHash: hashPassword(datos.password),
-      },
-    });
+export async function eliminarUsuarioAction(id: number) {
+    try {
+        await prisma.usuario.delete({
+            where: { id: Number(id) },
+        });
 
-    revalidatePath('/usuarios');
+        revalidatePath('/usuarios');
+        return { success: true };
 
-    return { success: true, usuario: mapUsuario(usuario) };
-  } catch (error: unknown) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return { success: false, error: 'El correo ya existe en la base de datos' };
-      }
-
-      return { success: false, error: `Error de base de datos (${error.code})` };
+    } catch (error: unknown) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2025') {
+                return { success: false, error: 'El usuario ya no existe' };
+            }
+            return { success: false, error: `Error de base de datos (${error.code})` };
+        }
+        return { success: false, error: 'Error al eliminar el usuario' };
     }
-
-    console.error('Error registrarUsuario:', error);
-    return { success: false, error: 'Error al registrar usuario' };
-  }
-}
-
-export async function actualizarUsuario(
-  id: number,
-  datos: {
-    nombre: string;
-    correo: string;
-    tipoUsuario: TipoUsuario;
-    estado: 'activo' | 'inactivo';
-    password?: string;
-  }
-) {
-  try {
-    const usuario = await prisma.usuario.update({
-      where: { id },
-      data: {
-        nombre: datos.nombre,
-        correo: datos.correo,
-        tipoUsuario: datos.tipoUsuario,
-        estado: datos.estado === 'activo' ? 'ACTIVO' : 'INACTIVO',
-        ...(datos.password ? { passwordHash: hashPassword(datos.password) } : {}),
-      },
-    });
-
-    revalidatePath('/usuarios');
-
-    return { success: true, usuario: mapUsuario(usuario) };
-  } catch (error: unknown) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return { success: false, error: 'El correo ya existe en la base de datos' };
-      }
-
-      if (error.code === 'P2025') {
-        return { success: false, error: 'El usuario ya no existe en la base de datos' };
-      }
-
-      return { success: false, error: `Error de base de datos (${error.code})` };
-    }
-
-    console.error('Error actualizarUsuario:', error);
-    return { success: false, error: 'Error al actualizar usuario' };
-  }
-}
-
-export async function eliminarUsuario(id: number) {
-  try {
-    await prisma.usuario.delete({
-      where: { id },
-    });
-
-    revalidatePath('/usuarios');
-
-    return { success: true };
-  } catch (error: unknown) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2025') {
-        return { success: false, error: 'El usuario ya no existe en la base de datos' };
-      }
-
-      return { success: false, error: `Error de base de datos (${error.code})` };
-    }
-
-    console.error('Error eliminarUsuario:', error);
-    return { success: false, error: 'Error al eliminar usuario' };
-  }
 }

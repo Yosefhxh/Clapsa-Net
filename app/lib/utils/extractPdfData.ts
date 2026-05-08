@@ -132,7 +132,7 @@ function parseConstanciaFiscal(text: string): ExtractedPdfData {
 
     let municipioClean = municipio || ''
     let estadoClean = estado || ''
-    let cpClean = cp || ''
+    const cpClean = cp || ''
 
     // Eliminar prefijos molestos
     municipioClean = municipioClean.replace(/Nombre del\s*/i, '').replace(/Nombre de la\s*/i, '').replace(/Nombre de\s*/i, '').replace(/\bNombre\b/gi, '').trim()
