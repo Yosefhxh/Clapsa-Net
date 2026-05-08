@@ -1,4 +1,4 @@
-import { FOLIO_COUNTER_KEY, STORAGE_KEY, etapasBase, EstadoOperacion, HistorialCambio } from "./types";
+import { FOLIO_COUNTER_KEY, STORAGE_KEY, etapasBase, EstadoOperacion, HistorialCambio, PasoDespacho, PasoEstado } from "./types";
 
 export function generarFolio(): string {
   const year = new Date().getFullYear().toString().slice(-2);
@@ -59,11 +59,27 @@ export function crearEstadoInicial() {
 
   if (saved) {
     try {
-      return JSON.parse(saved) as {
-        operacion: EstadoOperacion;
-        pasos: Array<{ id: number; etapa: string; fecha: string; estado: string }>;
-        documentos: Record<string, string>;
-        historial: HistorialCambio[];
+      const parsed = JSON.parse(saved) as any;
+
+      // Normalizar pasos desde localStorage y validar `estado`
+      const pasosParsed: PasoDespacho[] = (parsed.pasos ?? []).map((p: any) => {
+        const estadoCandidate = String(p?.estado ?? "").trim() as PasoEstado;
+        const isValidEstado = estadoCandidate === "completado" || estadoCandidate === "en-proceso" || estadoCandidate === "pendiente";
+        const estado: PasoEstado = isValidEstado ? estadoCandidate : "pendiente";
+
+        return {
+          id: Number(p?.id ?? 0),
+          etapa: String(p?.etapa ?? ""),
+          fecha: String(p?.fecha ?? "-"),
+          estado,
+        };
+      });
+
+      return {
+        operacion: parsed.operacion as EstadoOperacion,
+        pasos: pasosParsed.length ? pasosParsed : etapasBase,
+        documentos: parsed.documentos ?? ({} as Record<string, string>),
+        historial: parsed.historial ?? ([] as HistorialCambio[]),
       };
     } catch (loadError) {
       console.error("Error cargando despacho aduanal:", loadError);
