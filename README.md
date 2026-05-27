@@ -172,11 +172,3 @@ Recomendaciones de UI
 - Licencia: añade la licencia que prefieras (p. ej. MIT) o indica si el repositorio es privado.
 
 ---
-
-Si quieres, puedo:
-
-- Añadir el archivo `README.md` (hecho).
-- Hacer un commit y abrir un PR con el cambio.
-- Generar tests básicos para `parseConstanciaFiscal` con fixtures.
-
-Dime si deseas que haga el commit/PR y qué licencia prefieres que agregue.
