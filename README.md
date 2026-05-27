@@ -166,9 +166,3 @@ Recomendaciones de UI
 - Añadir fixtures PDF en `tests/fixtures/` y tests unitarios para `parseConstanciaFiscal` con ejemplos reales y edge-cases.
 - Flujo sugerido: crear rama `feature/xxx`, abrir PR, agregar casos de prueba y documentar cambios.
 
-## Contacto y licencia
-
-- Mantenedor: indicar nombre y correo aquí.
-- Licencia: añade la licencia que prefieras (p. ej. MIT) o indica si el repositorio es privado.
-
----
