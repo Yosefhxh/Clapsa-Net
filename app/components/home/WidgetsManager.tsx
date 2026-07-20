@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Package,
   Truck,
@@ -12,6 +12,7 @@ import {
   DollarSign,
   ArrowRightCircle,
   LucideIcon,
+  X
 } from "lucide-react";
 import { DEFAULT_WIDGETS, WidgetDef } from "./widgetsConfig";
 
@@ -92,165 +93,179 @@ export function WidgetsManager({ onClose }: { onClose?: () => void }) {
     save(copy);
   };
 
+  const handleReset = () => {
+    const defaults = DEFAULT_WIDGETS.slice(0, 6);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
+    setActive(defaults);
+    setAvailable(DEFAULT_WIDGETS.slice(6));
+    window.dispatchEvent(new CustomEvent("home_widgets_updated"));
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-6">
-      <div className="absolute inset-0 bg-black/40" onClick={() => onClose?.()} />
-      <div className="relative z-10 w-full max-w-4xl bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Configurar Widgets</h3>
-          <div className="flex items-center gap-2">
-            <button
-              className="px-3 py-1 rounded-md bg-gray-100"
-              onClick={() => {
-                const defaults = DEFAULT_WIDGETS.slice(0, 6);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
-                setActive(defaults);
-                setAvailable(DEFAULT_WIDGETS.slice(6));
-                window.dispatchEvent(new CustomEvent("home_widgets_updated"));
-              }}
-            >
-              Reset
-            </button>
-            <button className="px-3 py-1 rounded-md bg-aduanaBlue text-white" onClick={() => onClose?.()}>
-              Cerrar
-            </button>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      <div 
+        className="absolute inset-0 bg-black/40 transition-opacity" 
+        onClick={() => onClose?.()} 
+      />
+      
+      <div className="relative z-10 w-full max-w-4xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
+          <h2 className="text-xl font-semibold text-gray-800">Configurar Widgets</h2>
+          <button 
+            onClick={() => onClose?.()}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <h4 className="text-sm font-medium mb-2">Widgets activos</h4>
-            <div className="space-y-3">
-              {active.map((w, i) => {
-                const Icon = ICON_MAP[w.icon] || Package;
-                return (
-                  <div key={w.id} className="overflow-hidden rounded-xl border bg-white shadow-sm">
-                    <div className="flex items-start justify-between gap-3 p-3 border-b bg-gray-50/60">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`p-2.5 rounded-full ${w.color || "bg-blue-50"}`}>
-                          <Icon className="w-5 h-5 text-gray-800" />
+        <div className="p-6 overflow-y-auto bg-gray-50/30">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">Widgets activos</h4>
+              <div className="space-y-3">
+                {active.map((w, i) => {
+                  const Icon = ICON_MAP[w.icon] || Package;
+                  return (
+                    <div key={w.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                      <div className="flex items-start justify-between gap-3 p-3 border-b border-gray-100">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`p-2.5 rounded-xl ${w.color || "bg-blue-50"}`}>
+                            <Icon className="w-5 h-5 text-gray-800" />
+                          </div>
+                          <div className="min-w-0 flex items-center h-full">
+                            <div className="truncate text-sm font-semibold text-gray-900">{w.title}</div>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold text-gray-900">{w.title}</div>
-                          <div className="truncate text-xs text-gray-500">{w.id}</div>
-                        </div>
+
+                        {editingId === w.id ? (
+                          <button
+                            className="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                            onClick={() => setEditingId(null)}
+                          >
+                            Ocultar
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                              onClick={() => setEditingId(w.id)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              className="rounded-lg border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors"
+                              onClick={() => removeActive(i)}
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        )}
                       </div>
 
-                      {editingId === w.id ? (
-                        <button
-                          className="shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
-                          onClick={() => setEditingId(null)}
-                        >
-                          Cerrar
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            className="rounded-md border px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
-                            onClick={() => setEditingId(w.id)}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            className="rounded-md border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
-                            onClick={() => removeActive(i)}
-                          >
-                            Quitar
-                          </button>
+                      {editingId === w.id && (
+                        <div className="p-4 bg-gray-50">
+                          <div className="grid gap-5 lg:grid-cols-2">
+                            <div>
+                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Color de fondo</div>
+                              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                                {COLOR_OPTIONS.map((c) => {
+                                  const selected = w.color === c;
+                                  return (
+                                    <button
+                                      key={c}
+                                      onClick={() => updateWidget(w.id, { color: c })}
+                                      className={`flex h-10 items-center justify-center rounded-lg border ${c} transition-all ${
+                                        selected ? "ring-2 ring-indigo-500 border-transparent scale-105" : "border-gray-200 hover:border-gray-400"
+                                      }`}
+                                      title={c}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Icono</div>
+                              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                                {Object.keys(ICON_MAP).map((k) => {
+                                  const Ik = ICON_MAP[k] || Package;
+                                  const selected = w.icon === k;
+                                  return (
+                                    <button
+                                      key={k}
+                                      onClick={() => updateWidget(w.id, { icon: k })}
+                                      className={`flex h-10 items-center justify-center rounded-lg border bg-white transition-all ${
+                                        selected ? "border-indigo-500 ring-1 ring-indigo-500 text-indigo-600" : "border-gray-200 hover:border-gray-400 text-gray-600"
+                                      }`}
+                                      title={k}
+                                    >
+                                      <Ik className="h-4 w-4" />
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
-
-                    {editingId === w.id ? (
-                      <div className="p-4">
-                        <div className="mb-4 flex items-center gap-3 rounded-xl border bg-gray-50/80 p-3">
-                          <div className={`flex h-12 w-12 items-center justify-center rounded-full ${w.color || "bg-blue-50"}`}>
-                            <Icon className="h-6 w-6 text-gray-800" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-medium text-gray-900">{w.title}</div>
-                            <div className="text-xs text-gray-500">Icono actual: {w.icon}</div>
-                          </div>
-                        </div>
-
-                        <div className="grid gap-4 lg:grid-cols-2">
-                          <div>
-                            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Colores</div>
-                            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                              {COLOR_OPTIONS.map((c) => {
-                                const selected = w.color === c;
-                                return (
-                                  <button
-                                    key={c}
-                                    onClick={() => updateWidget(w.id, { color: c })}
-                                    className={`flex h-11 items-center justify-center rounded-xl border ${c} ${
-                                      selected ? "ring-2 ring-aduanaBlue ring-offset-2" : "hover:border-gray-400"
-                                    }`}
-                                    aria-label={c}
-                                    title={c}
-                                  >
-                                    <span className="sr-only">{c}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Iconos</div>
-                            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-                              {Object.keys(ICON_MAP).map((k) => {
-                                const Ik = ICON_MAP[k] || Package;
-                                const selected = w.icon === k;
-                                return (
-                                  <button
-                                    key={k}
-                                    onClick={() => updateWidget(w.id, { icon: k })}
-                                    className={`flex h-12 items-center justify-center rounded-xl border bg-white ${
-                                      selected ? "border-aduanaBlue ring-2 ring-aduanaBlue ring-offset-2" : "hover:border-gray-400"
-                                    }`}
-                                    title={k}
-                                  >
-                                    <Ik className="h-5 w-5 text-gray-800" />
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          <div>
-            <h4 className="text-sm font-medium mb-2">Widgets disponibles</h4>
-            <div className="space-y-2">
-              {available.map((w, i) => {
-                const Icon = ICON_MAP[w.icon] || Package;
-                return (
-                  <div key={w.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${w.color || "bg-blue-50"}`}>
-                        <Icon className="w-5 h-5 text-aduanaBlue" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium">{w.title}</div>
-                        <div className="text-xs text-gray-500">{w.id}</div>
-                      </div>
-                    </div>
-                    <button className="text-xs px-2 py-1 bg-emerald-50 rounded" onClick={() => addAvailable(i)}>
-                      Agregar
-                    </button>
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">Widgets disponibles</h4>
+              <div className="space-y-3">
+                {available.length === 0 ? (
+                  <div className="text-sm text-gray-500 text-center py-6 bg-white border border-dashed rounded-xl">
+                    Todos los widgets están activos.
                   </div>
-                );
-              })}
+                ) : (
+                  available.map((w, i) => {
+                    const Icon = ICON_MAP[w.icon] || Package;
+                    return (
+                      <div key={w.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-white shadow-sm hover:border-emerald-200 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2.5 rounded-xl ${w.color || "bg-blue-50"}`}>
+                            <Icon className="w-5 h-5 text-gray-800" />
+                          </div>
+                          <div className="text-sm font-semibold text-gray-900">{w.title}</div>
+                        </div>
+                        {/* Botón "+ Agregar" modificado a color verde claro */}
+                        <button 
+                          className="text-xs px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100 font-semibold rounded-lg transition-colors" 
+                          onClick={() => addAvailable(i)}
+                        >
+                          Agregar
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50">
+          <button 
+            className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+            onClick={handleReset}
+          >
+            Restablecer valores
+          </button>
+          
+          <button 
+            className="px-5 py-2 text-sm font-semibold text-white bg-[#283593] rounded-lg hover:bg-indigo-800 transition-colors shadow-sm"
+            onClick={() => onClose?.()}
+          >
+            Guardar y Cerrar
+          </button>
+        </div>
+
       </div>
     </div>
   );

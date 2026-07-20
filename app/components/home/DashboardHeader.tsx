@@ -23,8 +23,9 @@ export function DashboardHeader() {
         </div>
 
         <div className="pt-2">
+          {/* Botón actualizado para coincidir exactamente con el diseño principal de botones (ej. "Registrar cliente") */}
           <button
-            className="flex items-center gap-2 px-3 py-2 rounded-md border text-sm text-gray-600 bg-white/50 hover:bg-gray-50"
+            className="flex items-center gap-2 rounded-lg border border-aduanaBlue/20 bg-aduanaBlue/10 px-4 py-2 font-medium text-aduanaBlue transition-colors hover:border-aduanaBlue/30 hover:bg-aduanaBlue/15 lg:ml-auto"
             onClick={() => setOpen(true)}
           >
             <Settings className="w-4 h-4" />
