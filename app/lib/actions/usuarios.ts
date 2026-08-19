@@ -1,5 +1,6 @@
 'use server';
 
+import crypto from 'crypto';
 import prisma from '@/app/lib/prisma';
 import { Prisma, TipoUsuario, EstadoUsuario } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
@@ -12,16 +13,89 @@ interface UsuarioFormData {
   password?: string;
 }
 
+const PASSWORD_HASH_PREFIX = 'sha256:';
+const DEFAULT_SUPERADMIN = {
+    nombre: 'Super Admin',
+    correo: 'superadmin@clapsa.net',
+    password: 'SuperAdmin2026!',
+};
+
+function normalizarCorreo(correo: string) {
+    return correo.trim().toLowerCase();
+}
+
+function hashearPassword(password: string) {
+    return `${PASSWORD_HASH_PREFIX}${crypto.createHash('sha256').update(password).digest('hex')}`;
+}
+
+function verificarPassword(passwordIngresada: string, passwordPersistida: string) {
+    if (!passwordPersistida) {
+        return false;
+    }
+
+    if (passwordPersistida.startsWith(PASSWORD_HASH_PREFIX)) {
+        return passwordPersistida === hashearPassword(passwordIngresada);
+    }
+
+    return passwordPersistida === passwordIngresada;
+}
+
+function usuarioParaSesion(usuario: {
+    id: number;
+    nombre: string;
+    correo: string;
+    tipoUsuario: TipoUsuario;
+    estado: EstadoUsuario;
+    fechaRegistro: Date;
+}) {
+    return {
+        id: usuario.id,
+        nombre: usuario.nombre,
+        correo: usuario.correo,
+        tipoUsuario: usuario.tipoUsuario,
+        estado: usuario.estado,
+        fechaRegistro: usuario.fechaRegistro.toISOString(),
+    };
+}
+
+async function asegurarSuperadmin() {
+    const correoSuperadmin = normalizarCorreo(DEFAULT_SUPERADMIN.correo);
+    const superadminExistente = await prisma.usuario.findFirst({
+        where: {
+            correo: {
+                equals: correoSuperadmin,
+                mode: 'insensitive',
+            },
+        },
+    });
+
+    if (superadminExistente) {
+        return superadminExistente;
+    }
+
+    return prisma.usuario.create({
+        data: {
+            nombre: DEFAULT_SUPERADMIN.nombre,
+            correo: correoSuperadmin,
+            tipoUsuario: TipoUsuario.ADMIN,
+            estado: EstadoUsuario.ACTIVO,
+            passwordHash: hashearPassword(DEFAULT_SUPERADMIN.password),
+        },
+    });
+}
+
 export async function gestionarUsuario(datos: UsuarioFormData, id?: number) {
     try {
+        const passwordHash = datos.password?.trim() ? hashearPassword(datos.password.trim()) : undefined;
+
         // Acceso seguro al modelo usuario de Prisma
         const dataToSave: Prisma.UsuarioUpdateInput = {
             nombre: datos.nombre,
-            correo: datos.correo,
+            correo: normalizarCorreo(datos.correo),
             tipoUsuario: datos.tipoUsuario,
             // Convertimos el string del front ('activo') al valor del Enum (ACTIVO)
             estado: datos.estado.toUpperCase() === 'ACTIVO' ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO,
-            ...(datos.password && { passwordHash: datos.password }) // Usamos passwordHash según tu esquema
+            ...(passwordHash && { passwordHash })
         };
 
         if (id) {
@@ -33,10 +107,10 @@ export async function gestionarUsuario(datos: UsuarioFormData, id?: number) {
             await prisma.usuario.create({
                 data: {
                     nombre: datos.nombre,
-                    correo: datos.correo,
+                    correo: normalizarCorreo(datos.correo),
                     tipoUsuario: datos.tipoUsuario,
                     estado: datos.estado.toUpperCase() === 'ACTIVO' ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO,
-                    passwordHash: datos.password || '',
+                    passwordHash: passwordHash ?? '',
                 },
             });
         }
@@ -53,6 +127,47 @@ export async function gestionarUsuario(datos: UsuarioFormData, id?: number) {
         }
         
         console.error('Error en gestionarUsuario:', error);
+        return { success: false, error: 'Ocurrió un error inesperado' };
+    }
+}
+
+export async function iniciarSesionAction(correo: string, password: string) {
+    try {
+        await asegurarSuperadmin();
+
+        const correoNormalizado = normalizarCorreo(correo);
+
+        if (!correoNormalizado) {
+            return { success: false, error: 'Usuario incorrecto' };
+        }
+
+        const usuario = await prisma.usuario.findFirst({
+            where: {
+                correo: {
+                    equals: correoNormalizado,
+                    mode: 'insensitive',
+                },
+            },
+        });
+
+        if (!usuario) {
+            return { success: false, error: 'Usuario no encontrado' };
+        }
+
+        if (usuario.estado !== EstadoUsuario.ACTIVO) {
+            return { success: false, error: 'Usuario incorrecto' };
+        }
+
+        if (!verificarPassword(password, usuario.passwordHash)) {
+            return { success: false, error: 'Contraseña incorrecta' };
+        }
+
+        return {
+            success: true,
+            usuario: usuarioParaSesion(usuario),
+        };
+    } catch (error) {
+        console.error('Error en iniciarSesionAction:', error);
         return { success: false, error: 'Ocurrió un error inesperado' };
     }
 }

@@ -146,7 +146,7 @@ export default function UsuariosPage() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Gestión de Usuarios</h1>
-          <p className="text-gray-600">Persistencia directa en base de datos</p>
+          <p className="text-gray-600">Usuarios de Clapsa Net</p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 mb-6">
