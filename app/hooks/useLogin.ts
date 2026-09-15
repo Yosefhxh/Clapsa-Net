@@ -90,7 +90,7 @@ export function useLogin() {
       setSessionUser({
         ...response.usuario,
         fechaIngreso: loginDate,
-      });
+      } as any);
 
       setForm(INITIAL_FORM);
       router.push("/");

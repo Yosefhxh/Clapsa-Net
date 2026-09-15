@@ -39,7 +39,7 @@ export function ClientesManagementPage({ tipoCliente, title, description }: Clie
       const clientesGuardados = await obtenerClientes(tipoCliente);
 
       setClientes(
-        clientesGuardados.map((cliente) => ({
+        clientesGuardados.map((cliente: any) => ({
           id: cliente.id,
           folio: cliente.folio,
           razonSocial: cliente.razonSocial,
