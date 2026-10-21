@@ -14,13 +14,13 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { extractPdfData } from '@/app/lib/utils/extractPdfData';
-import { ESTADOS_MEXICO, obtenerEstadoDesdeDireccion } from '@/app/lib/utils/estadosMexico';
+import { extractPdfData } from '@/shared/utils/extractPdfData';
+import { ESTADOS_MEXICO, obtenerEstadoDesdeDireccion } from '@/shared/utils/estadosMexico';
 import { 
   registrarProveedor, 
   obtenerProveedores, 
   eliminarProveedorAction 
-} from '@/app/lib/actions/proveedores';
+} from '@/features/proveedores/actions/proveedores';
 
 type TipoProveedor = 'LOGISTICA' | 'ADUANAL' | 'GENERALES';
 type FuenteAlta = 'manual' | 'constancia';

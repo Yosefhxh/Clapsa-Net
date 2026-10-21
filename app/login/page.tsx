@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
-import { useLogin } from "@/app/hooks/useLogin";
+import { useLogin } from "@/features/session/hooks/useLogin";
 
 export default function LoginPage() {
   const { form, errors, isSubmitting, updateField, submitLogin } = useLogin();

@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import prisma from '@/shared/lib/prisma'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

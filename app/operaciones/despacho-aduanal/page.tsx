@@ -1,5 +1,5 @@
-import { OperationLayout } from "@/app/components/trafico/OperationLayout";
-import { OperationGlobalStatus, OperationLayoutData } from "@/app/components/trafico/types";
+import { OperationLayout } from "@/features/trafico/components/OperationLayout";
+import { OperationGlobalStatus, OperationLayoutData } from "@/features/trafico/types/trafico-types";
 import {
   asignarClienteDespacho,
   actualizarEstadoEtapaDespacho,
@@ -7,13 +7,13 @@ import {
   obtenerOperacionDespacho,
   subirDocumentoOperacion,
   validarDocumentoOperacion,
-} from "@/app/lib/actions/despacho";
+} from "@/features/despacho-aduanal/actions/despacho-actions";
 import {
   construirBitacoraOperacion,
   construirDocumentRows,
   construirResumenOperacion,
   construirStageRows,
-} from "@/app/lib/utils/despacho";
+} from "@/features/despacho-aduanal/utils/despacho-formatters";
 import { HitoOperativo } from "@prisma/client";
 
 function buildFallbackOperation(): OperationLayoutData {
