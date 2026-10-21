@@ -1,4 +1,4 @@
-import { PasoDespacho } from "@/features/despacho-aduanal/types/despacho-types";
+import { PasoDespacho } from "../types";
 
 interface ProgressWidgetProps {
   pasos: PasoDespacho[];

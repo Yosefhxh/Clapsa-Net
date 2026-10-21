@@ -1,22 +1,30 @@
 'use server';
 
-import prisma from '@/shared/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { generarSiguienteFolio } from '@/shared/utils/folios';
 import { revalidatePath } from 'next/cache';
+import {
+	dalActualizarCliente,
+	dalCrearCliente,
+	dalEliminarCliente,
+	dalObtenerClientes,
+} from '../dal/clientes-dal';
 
-export async function registrarCliente(datos: { razonSocial: string; rfc: string; domicilio: string; tipo: 'DIRECTO' | 'FORWARDER' }) {
+export async function registrarCliente(datos: {
+	razonSocial: string;
+	rfc: string;
+	domicilio: string;
+	tipo: 'DIRECTO' | 'FORWARDER';
+}) {
 	try {
 		const nuevoFolio = await generarSiguienteFolio(datos.tipo);
 
-		const cliente = await prisma.cliente.create({
-			data: {
-				folio: nuevoFolio,
-				razonSocial: datos.razonSocial,
-				rfc: datos.rfc,
-				domicilio: datos.domicilio,
-				tipo: datos.tipo,
-			},
+		const cliente = await dalCrearCliente({
+			folio: nuevoFolio,
+			razonSocial: datos.razonSocial,
+			rfc: datos.rfc,
+			domicilio: datos.domicilio,
+			tipo: datos.tipo,
 		});
 
 		revalidatePath('/clientes/directo');
@@ -37,17 +45,12 @@ export async function registrarCliente(datos: { razonSocial: string; rfc: string
 	}
 }
 
-export async function actualizarCliente(id: number, datos: { razonSocial: string; rfc: string; domicilio: string; tipo: 'DIRECTO' | 'FORWARDER' }) {
+export async function actualizarCliente(
+	id: number,
+	datos: { razonSocial: string; rfc: string; domicilio: string; tipo: 'DIRECTO' | 'FORWARDER' }
+) {
 	try {
-		const cliente = await prisma.cliente.update({
-			where: { id },
-			data: {
-				razonSocial: datos.razonSocial,
-				rfc: datos.rfc,
-				domicilio: datos.domicilio,
-				tipo: datos.tipo,
-			},
-		});
+		const cliente = await dalActualizarCliente(id, datos);
 
 		revalidatePath('/clientes/directo');
 		revalidatePath('/clientes/forwarder');
@@ -72,17 +75,12 @@ export async function actualizarCliente(id: number, datos: { razonSocial: string
 }
 
 export async function obtenerClientes(tipo?: 'DIRECTO' | 'FORWARDER') {
-	return prisma.cliente.findMany({
-		where: tipo ? { tipo } : undefined,
-		orderBy: { id: 'desc' },
-	});
+	return await dalObtenerClientes(tipo);
 }
 
 export async function eliminarCliente(id: number) {
 	try {
-		await prisma.cliente.delete({
-			where: { id },
-		});
+		await dalEliminarCliente(id);
 
 		revalidatePath('/clientes/directo');
 		revalidatePath('/clientes/forwarder');

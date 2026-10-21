@@ -1,4 +1,4 @@
-import { FOLIO_COUNTER_KEY, STORAGE_KEY, etapasBase, EstadoOperacion, HistorialCambio, PasoDespacho, PasoEstado } from "@/features/despacho-aduanal/types/despacho-types";
+import { FOLIO_COUNTER_KEY, STORAGE_KEY, etapasBase, EstadoOperacion, HistorialCambio, PasoDespacho, PasoEstado } from "../types";
 
 export function generarFolio(): string {
   const year = new Date().getFullYear().toString().slice(-2);

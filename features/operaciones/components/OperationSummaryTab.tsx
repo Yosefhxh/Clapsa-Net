@@ -1,11 +1,11 @@
 "use client";
 
-import { asignarClienteDespacho } from '@/features/despacho-aduanal/actions/despacho-actions';
+import { asignarClienteDespacho } from '../actions/operaciones-actions';
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { OperationClientOption as ClientOption, OperationSummaryData } from "@/features/trafico/types/trafico-types";
+import { ClientOption, OperationSummaryData } from "../types";
 
 const clientSelectorSchema = z.object({
     clienteId: z.coerce.number().int().positive("Selecciona un cliente válido."),
@@ -35,7 +35,7 @@ export function OperationSummaryTab({
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
-    } = useForm<ClientSelectorFormValues>({
+    } = useForm<z.input<typeof clientSelectorSchema>, any, z.output<typeof clientSelectorSchema>>({
         resolver: zodResolver(clientSelectorSchema),
         defaultValues: {
             clienteId: clienteActualId ?? clientes[0]?.id,

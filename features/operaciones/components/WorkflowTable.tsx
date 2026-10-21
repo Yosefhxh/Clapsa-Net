@@ -1,5 +1,5 @@
 import { CheckCircle2, Clock3 } from "lucide-react";
-import { PasoDespacho, PasoEstado, estadoStyles, estadoLabel } from "@/features/despacho-aduanal/types/despacho-types";
+import { PasoDespacho, PasoEstado, estadoStyles, estadoLabel } from "../types";
 
 interface WorkflowTableProps {
   pasos: PasoDespacho[];

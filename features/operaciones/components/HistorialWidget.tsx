@@ -1,4 +1,4 @@
-import { HistorialCambio } from "@/features/despacho-aduanal/types/despacho-types";
+import { HistorialCambio } from "../types";
 
 interface HistorialWidgetProps {
   historial: HistorialCambio[];

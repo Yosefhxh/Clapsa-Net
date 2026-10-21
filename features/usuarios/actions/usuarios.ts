@@ -1,11 +1,17 @@
 'use server';
 
 import crypto from 'crypto';
-import prisma from '@/shared/lib/prisma';
 import { Prisma, TipoUsuario, EstadoUsuario } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import {
+    dalActualizarUsuario,
+    dalBuscarUsuarioPorCorreo,
+    dalCrearUsuario,
+    dalEliminarUsuario,
+    dalObtenerUsuarios,
+} from '../dal/usuarios-dal';
 
-interface UsuarioFormData {
+export interface UsuarioFormData {
   nombre: string;
   correo: string;
   tipoUsuario: TipoUsuario;
@@ -60,27 +66,18 @@ function usuarioParaSesion(usuario: {
 
 async function asegurarSuperadmin() {
     const correoSuperadmin = normalizarCorreo(DEFAULT_SUPERADMIN.correo);
-    const superadminExistente = await prisma.usuario.findFirst({
-        where: {
-            correo: {
-                equals: correoSuperadmin,
-                mode: 'insensitive',
-            },
-        },
-    });
+    const superadminExistente = await dalBuscarUsuarioPorCorreo(correoSuperadmin);
 
     if (superadminExistente) {
         return superadminExistente;
     }
 
-    return prisma.usuario.create({
-        data: {
-            nombre: DEFAULT_SUPERADMIN.nombre,
-            correo: correoSuperadmin,
-            tipoUsuario: TipoUsuario.ADMIN,
-            estado: EstadoUsuario.ACTIVO,
-            passwordHash: hashearPassword(DEFAULT_SUPERADMIN.password),
-        },
+    return dalCrearUsuario({
+        nombre: DEFAULT_SUPERADMIN.nombre,
+        correo: correoSuperadmin,
+        tipoUsuario: TipoUsuario.ADMIN,
+        estado: EstadoUsuario.ACTIVO,
+        passwordHash: hashearPassword(DEFAULT_SUPERADMIN.password),
     });
 }
 
@@ -88,30 +85,23 @@ export async function gestionarUsuario(datos: UsuarioFormData, id?: number) {
     try {
         const passwordHash = datos.password?.trim() ? hashearPassword(datos.password.trim()) : undefined;
 
-        // Acceso seguro al modelo usuario de Prisma
         const dataToSave: Prisma.UsuarioUpdateInput = {
             nombre: datos.nombre,
             correo: normalizarCorreo(datos.correo),
             tipoUsuario: datos.tipoUsuario,
-            // Convertimos el string del front ('activo') al valor del Enum (ACTIVO)
             estado: datos.estado.toUpperCase() === 'ACTIVO' ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO,
             ...(passwordHash && { passwordHash })
         };
 
         if (id) {
-            await prisma.usuario.update({
-                where: { id: Number(id) },
-                data: dataToSave,
-            });
+            await dalActualizarUsuario(Number(id), dataToSave);
         } else {
-            await prisma.usuario.create({
-                data: {
-                    nombre: datos.nombre,
-                    correo: normalizarCorreo(datos.correo),
-                    tipoUsuario: datos.tipoUsuario,
-                    estado: datos.estado.toUpperCase() === 'ACTIVO' ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO,
-                    passwordHash: passwordHash ?? '',
-                },
+            await dalCrearUsuario({
+                nombre: datos.nombre,
+                correo: normalizarCorreo(datos.correo),
+                tipoUsuario: datos.tipoUsuario,
+                estado: datos.estado.toUpperCase() === 'ACTIVO' ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO,
+                passwordHash: passwordHash ?? '',
             });
         }
 
@@ -141,14 +131,7 @@ export async function iniciarSesionAction(correo: string, password: string) {
             return { success: false, error: 'Usuario incorrecto' };
         }
 
-        const usuario = await prisma.usuario.findFirst({
-            where: {
-                correo: {
-                    equals: correoNormalizado,
-                    mode: 'insensitive',
-                },
-            },
-        });
+        const usuario = await dalBuscarUsuarioPorCorreo(correoNormalizado);
 
         if (!usuario) {
             return { success: false, error: 'Usuario no encontrado' };
@@ -174,11 +157,7 @@ export async function iniciarSesionAction(correo: string, password: string) {
 
 export async function obtenerUsuarios() {
     try {
-        const usuarios = await prisma.usuario.findMany({
-            orderBy: { fechaRegistro: 'desc' },
-        });
-        
-        return usuarios;
+        return await dalObtenerUsuarios();
     } catch (error) {
         console.error('Error al obtener usuarios:', error);
         return [];
@@ -187,9 +166,7 @@ export async function obtenerUsuarios() {
 
 export async function eliminarUsuarioAction(id: number) {
     try {
-        await prisma.usuario.delete({
-            where: { id: Number(id) },
-        });
+        await dalEliminarUsuario(Number(id));
 
         revalidatePath('/usuarios');
         return { success: true };

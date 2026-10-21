@@ -6,7 +6,7 @@ import {
   eliminarCliente,
   obtenerClientes,
   registrarCliente,
-} from "@/features/clientes/actions/clientes-actions";
+} from "../actions/clientes-actions";
 import { Cliente, FormDataCliente, ModalMode, TipoCliente } from "../types/clientes-types";
 import { ClientesErrorAlert } from "./ClientesErrorAlert";
 import { ClientesModal } from "./ClientesModal";

@@ -7,7 +7,7 @@ import {
   OperationStageState,
   OperationStageView,
   OperationSummaryData,
-} from '@/features/trafico/types/trafico-types';
+} from '../types';
 
 function formatDateTime(date: Date | null | undefined) {
   if (!date) return '-';

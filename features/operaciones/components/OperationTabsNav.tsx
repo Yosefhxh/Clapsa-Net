@@ -1,6 +1,6 @@
 "use client";
 
-import { tabs, OperationTabId } from "@/features/trafico/types/trafico-types";
+import { tabs, OperationTabId } from "../types";
 
 export interface OperationTabsNavProps {
   activeTab: OperationTabId;

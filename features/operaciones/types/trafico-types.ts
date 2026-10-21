@@ -41,6 +41,8 @@ export interface OperationClientOption {
   rfc: string;
 }
 
+export type ClientOption = OperationClientOption;
+
 export interface OperationStageView {
   id: string;
   pasoId: string;

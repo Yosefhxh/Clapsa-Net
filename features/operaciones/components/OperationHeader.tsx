@@ -1,5 +1,5 @@
 import { CheckCircle2, CircleAlert, PauseCircle } from "lucide-react";
-import { OperationGlobalStatus } from "@/features/trafico/types/trafico-types";
+import { OperationGlobalStatus } from "../types";
 
 export interface OperationHeaderProps {
   folio: string;

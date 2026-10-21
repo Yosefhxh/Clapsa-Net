@@ -1,8 +1,12 @@
 'use server';
 
-import prisma from '@/shared/lib/prisma';
 import { Prisma, TipoProveedor } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import {
+    dalCrearProveedor,
+    dalEliminarProveedor,
+    dalObtenerProveedores,
+} from '../dal/proveedores-dal';
 
 export async function registrarProveedor(datos: {
     razonSocial: string;
@@ -13,15 +17,13 @@ export async function registrarProveedor(datos: {
     direccion: string;
 }) {
     try {
-        const proveedor = await prisma.proveedores.create({
-            data: {
-                razonSocial: datos.razonSocial,
-                tipoProveedor: datos.tipoProveedor,
-                rfc: datos.rfc,
-                correo: datos.correo,
-                telefono: datos.telefono,
-                direccion: datos.direccion,
-            },
+        const proveedor = await dalCrearProveedor({
+            razonSocial: datos.razonSocial,
+            tipoProveedor: datos.tipoProveedor,
+            rfc: datos.rfc,
+            correo: datos.correo,
+            telefono: datos.telefono,
+            direccion: datos.direccion,
         });
 
         // Revalidamos las rutas donde se muestran proveedores
@@ -47,9 +49,7 @@ export async function registrarProveedor(datos: {
 
 export async function obtenerProveedores() {
     try {
-        return await prisma.proveedores.findMany({
-            orderBy: { id: 'desc' },
-        });
+        return await dalObtenerProveedores();
     } catch (error) {
         console.error('Error obtenerProveedores:', error);
         return [];
@@ -58,9 +58,7 @@ export async function obtenerProveedores() {
 
 export async function eliminarProveedorAction(id: number) {
     try {
-        await prisma.proveedores.delete({
-            where: { id },
-        });
+        await dalEliminarProveedor(id);
 
         revalidatePath('/proveedores/alta');
         revalidatePath('/proveedores/busqueda');

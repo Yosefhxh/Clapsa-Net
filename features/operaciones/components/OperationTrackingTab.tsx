@@ -2,12 +2,17 @@
 
 import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { Clock3, CheckCircle2, CircleAlert } from "lucide-react";
-import { actualizarEstadoEtapaDespacho } from "@/features/despacho-aduanal/actions/despacho-actions";
-import { OperationStageState, OperationStageView, stageLabels, stageStyles } from "@/features/trafico/types/trafico-types";
+import { actualizarEstadoEtapaDespacho } from "../actions/operaciones-actions";
+import { OperationStageState, OperationStageView, stageLabels, stageStyles } from "../types";
 
 export interface OperationTrackingTabProps {
   traficoId: string;
   etapas: OperationStageView[];
+  onChangeEstado?: (input: {
+    traficoId: string;
+    pasoId: string;
+    estado: OperationStageState;
+  }) => Promise<{ success: boolean; message: string }>;
 }
 
 const nextActionLabel: Record<OperationStageState, string> = {
@@ -22,7 +27,7 @@ function getIcon(estado: OperationStageState) {
   return <Clock3 className="w-4 h-4 text-slate-400" />;
 }
 
-export function OperationTrackingTab({ traficoId, etapas }: OperationTrackingTabProps) {
+export function OperationTrackingTab({ traficoId, etapas, onChangeEstado }: OperationTrackingTabProps) {
   const [filter, setFilter] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -47,7 +52,11 @@ export function OperationTrackingTab({ traficoId, etapas }: OperationTrackingTab
       // 1. Actualización optimista instantánea en UI
       setOptimisticEtapas({ pasoId, estado });
       // 2. Mutación real en backend mediante Server Action
-      await actualizarEstadoEtapaDespacho({ traficoId, pasoId, estado });
+      if (onChangeEstado) {
+        await onChangeEstado({ traficoId, pasoId, estado });
+      } else {
+        await actualizarEstadoEtapaDespacho({ traficoId, pasoId, estado });
+      }
     });
   };
 

@@ -1,4 +1,4 @@
-import { EstadoOperacion, TipoCliente, TipoOperacion, aduanas } from "@/features/despacho-aduanal/types/despacho-types";
+import { EstadoOperacion, TipoCliente, TipoOperacion, aduanas } from "../types";
 
 interface MasterDataSectionProps {
   operacion: EstadoOperacion;

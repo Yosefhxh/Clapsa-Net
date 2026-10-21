@@ -1,19 +1,18 @@
-import { OperationLayout } from "@/features/trafico/components/OperationLayout";
-import { OperationGlobalStatus, OperationLayoutData } from "@/features/trafico/types/trafico-types";
 import {
+  OperationLayout,
+  OperationGlobalStatus,
+  OperationLayoutData,
   asignarClienteDespacho,
   actualizarEstadoEtapaDespacho,
   obtenerClientesOperacion,
   obtenerOperacionDespacho,
   subirDocumentoOperacion,
   validarDocumentoOperacion,
-} from "@/features/despacho-aduanal/actions/despacho-actions";
-import {
   construirBitacoraOperacion,
   construirDocumentRows,
   construirResumenOperacion,
   construirStageRows,
-} from "@/features/despacho-aduanal/utils/despacho-formatters";
+} from "@/features/operaciones";
 import { HitoOperativo } from "@prisma/client";
 
 function buildFallbackOperation(): OperationLayoutData {
@@ -50,9 +49,10 @@ function buildFallbackOperation(): OperationLayoutData {
       id: `draft-step-${index + 1}`,
       traficoId: "draft-operacion",
       pasoId: `draft-paso-${index + 1}`,
-      fechaInicio: null,
+      fechaInicio: now,
       fechaFin: null,
       tiempoInvertido: null,
+      observaciones: null,
       createdAt: now,
       updatedAt: now,
       paso: {

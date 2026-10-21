@@ -20,7 +20,7 @@ import {
   registrarProveedor, 
   obtenerProveedores, 
   eliminarProveedorAction 
-} from '@/features/proveedores/actions/proveedores';
+} from '@/features/proveedores';
 
 type TipoProveedor = 'LOGISTICA' | 'ADUANAL' | 'GENERALES';
 type FuenteAlta = 'manual' | 'constancia';

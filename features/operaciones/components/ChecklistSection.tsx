@@ -1,5 +1,5 @@
 import { Upload } from "lucide-react";
-import { TipoOperacion, checklistPorOperacion } from "@/features/despacho-aduanal/types/despacho-types";
+import { TipoOperacion, checklistPorOperacion } from "../types";
 
 interface ChecklistSectionProps {
   tipoOperacion: TipoOperacion;

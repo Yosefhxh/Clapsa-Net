@@ -18,7 +18,7 @@ import {
   OperationStageView,
   OperationSummaryData,
   OperationTabId,
-} from "@/features/trafico/types/trafico-types";
+} from "../types";
 
 export interface OperationLayoutProps {
   operation: OperationLayoutData;

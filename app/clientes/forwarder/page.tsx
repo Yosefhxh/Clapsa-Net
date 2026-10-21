@@ -1,6 +1,6 @@
 "use client";
 
-import { ClientesManagementPage } from "@/features/clientes/components/ClientesManagementPage";
+import { ClientesManagementPage } from "@/features/clientes";
 
 export default function ClientesPage() {
   return (

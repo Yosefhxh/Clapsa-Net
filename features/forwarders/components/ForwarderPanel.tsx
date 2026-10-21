@@ -2,7 +2,7 @@
 
 import { uploadDocument } from '@/shared/actions/storage';
 import { CalendarClock, Loader2, UploadCloud } from "lucide-react";
-import { useForwarderLogic } from "@/features/forwarders/hooks/useForwarderLogic";
+import { useForwarderLogic } from "../hooks/useForwarderLogic";
 
 export interface ForwarderClientNode {
   id: number;

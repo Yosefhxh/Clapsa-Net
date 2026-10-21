@@ -3,8 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/shared/components/sidebar/Sidebar";
-import { UserSessionBadge } from "@/features/session/components/UserSessionBadge";
-import { useSession } from "@/features/session/components/SessionProvider";
+import { UserSessionBadge, useSession } from "@/features/session";
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

@@ -1,9 +1,9 @@
 "use client";
 
-import { subirDocumentoOperacion, validarDocumentoOperacion } from '@/features/despacho-aduanal/actions/despacho-actions';
+import { subirDocumentoOperacion, validarDocumentoOperacion } from '../actions/operaciones-actions';
 import { useState } from "react";
 import { Download, FileCheck2, FileX2, UploadCloud } from "lucide-react";
-import { OperationDocumentKey, OperationDocumentRow, documentLabels } from "@/features/trafico/types/trafico-types";
+import { OperationDocumentKey, OperationDocumentRow, documentLabels } from "../types";
 
 export interface OperationDocumentationTabProps {
     traficoId: string;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Calendar } from "lucide-react";
-import { LOGIN_DATE_STORAGE_KEY } from "@/features/session/components/SessionProvider";
+import { LOGIN_DATE_STORAGE_KEY } from "@/features/session";
 
 export function LoginDateTimeDisplay() {
   const [currentTime, setCurrentTime] = useState(new Date());

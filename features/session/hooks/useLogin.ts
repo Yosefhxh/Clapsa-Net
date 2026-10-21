@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { iniciarSesionAction } from "@/features/usuarios/actions/usuarios";
-import { useSession } from "@/features/session/components/SessionProvider";
+import { iniciarSesionAction } from "@/features/usuarios";
+import { useSession } from "../components/SessionProvider";
 
 interface LoginFormState {
   correo: string;

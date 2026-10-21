@@ -1,4 +1,4 @@
-import { OperationAuditItem } from "@/features/trafico/types/trafico-types";
+import { OperationAuditItem } from "../types";
 
 export interface OperationAuditTabProps {
   historial: OperationAuditItem[];

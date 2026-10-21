@@ -1,5 +1,5 @@
 import { FileText } from "lucide-react";
-import { PasoDespacho } from "@/features/despacho-aduanal/types/despacho-types";
+import { PasoDespacho } from "../types";
 
 interface FolioHeaderProps {
   folio: string;

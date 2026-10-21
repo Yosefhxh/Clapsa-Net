@@ -3,7 +3,7 @@ import { useDropzone } from "react-dropzone";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ForwarderClientNode } from "@/features/forwarders/components/ForwarderPanel";
+import type { ForwarderClientNode } from "../components/ForwarderPanel";
 import { uploadDocument } from '@/shared/actions/storage';
 
 const encargoSchema = z.object({

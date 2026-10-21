@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Trash2, Pencil, Plus, X, Loader2 } from "lucide-react";
-import { gestionarUsuario, obtenerUsuarios, eliminarUsuarioAction } from "@/features/usuarios/actions/usuarios";
+import { gestionarUsuario, obtenerUsuarios, eliminarUsuarioAction } from "@/features/usuarios";
 
 type TipoUsuario = "ADMIN" | "EDITOR" | "VIEWER";
 
