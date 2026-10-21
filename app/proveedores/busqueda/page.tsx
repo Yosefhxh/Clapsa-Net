@@ -1,3 +1,6 @@
+/**
+ * @deprecated Legacy inert page scheduled for removal.
+ */
 import Link from 'next/link';
 import { Search, ArrowRight } from 'lucide-react';
 

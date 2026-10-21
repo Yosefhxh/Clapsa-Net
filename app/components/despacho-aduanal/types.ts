@@ -1,5 +1,7 @@
-export type TipoCliente = "DIRECTO" | "FORWARDER";
-export type TipoOperacion = "IMPO" | "EXPO";
+import { TipoCliente, TipoOperacion } from "@prisma/client";
+
+export { TipoCliente, TipoOperacion };
+
 export type PasoEstado = "completado" | "en-proceso" | "pendiente";
 
 export interface PasoDespacho {

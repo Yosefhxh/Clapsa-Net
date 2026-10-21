@@ -1,3 +1,6 @@
+/**
+ * @deprecated Legacy inert component scheduled for removal.
+ */
 export function RecentOperationsSection() {
   return (
     <div className="mt-12 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">

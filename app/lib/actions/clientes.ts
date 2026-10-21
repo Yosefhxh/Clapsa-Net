@@ -1,6 +1,6 @@
 'use server';
 
-import prisma from '@/app/lib/prisma';
+import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { generarSiguienteFolio } from '../utils/folios';
 import { revalidatePath } from 'next/cache';

@@ -121,6 +121,7 @@ export default function ProveedoresAltaPage() {
         ...prev,
         razonSocial: datosExtraidos.razonSocial || prev.razonSocial,
         rfc: datosExtraidos.rfc,
+        direccion: datosExtraidos.domicilio || prev.direccion,
       }));
       setFuenteAlta('constancia');
     } catch (pdfError) {

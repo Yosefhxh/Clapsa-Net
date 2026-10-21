@@ -1,7 +1,7 @@
 'use server';
 
 import crypto from 'crypto';
-import prisma from '@/app/lib/prisma';
+import prisma from '@/lib/prisma';
 import { Prisma, TipoUsuario, EstadoUsuario } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 

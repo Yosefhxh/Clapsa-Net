@@ -7,18 +7,27 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@vercel/blob": "^2.8.2",
     "lucide-react": "^1.8.0",
     "next": "16.2.4",
     "pdfjs-dist": "^5.6.205",
     "pg": "^8.20.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-dropzone": "^15.0.0"
+    "react-dropzone": "^15.0.0",
+    "react-hook-form": "^7.90.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -32,6 +41,7 @@
     "prisma": "^7.8.0",
     "tailwindcss": "^4.2.2",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

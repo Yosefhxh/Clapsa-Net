@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -38,35 +33,189 @@ enum EstadoUsuario {
   INACTIVO
 }
 
+enum TipoOperacion {
+  IMPO
+  EXPO
+}
+
+enum HitoOperativo {
+  PREVIO_ORIGEN
+  FLETE_MARITIMO
+  FLETE_AEREO
+  FT_INTERMODAL
+  DESPACHO_ADUANERO
+  FT_NACIONAL
+  UVA
+  ALMACENAJE
+  MANIOBRAS_ALMACEN
+  MANIOBRAS_PORTUARIAS
+  OTRAS
+}
+
 model Cliente {
-  id          Int         @id @default(autoincrement())
-  folio       String      @unique
-  razonSocial String
-  rfc         String      @unique
-  domicilio   String      @default("No especificado")
-  tipo        TipoCliente
-  fechaAlta   DateTime    @default(now())
+  id                   Int         @id @default(autoincrement())
+  folio                String      @unique
+  razonSocial          String
+  rfc                  String      @unique
+  domicilio            String      @default("No especificado")
+  tipo                 TipoCliente
+  fechaAlta            DateTime    @default(now())
+  clientePadreId       Int?
+  encargoConferido     Boolean     @default(false)
+  fechaVigenciaEncargo DateTime?
+  pdfEncargoUrl        String?
+  clientePadre         Cliente?    @relation("ClienteJerarquia", fields: [clientePadreId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  subclientes          Cliente[]   @relation("ClienteJerarquia")
+  traficos             Trafico[]
+
+  @@index([tipo])
+  @@index([clientePadreId])
 }
 
 model Proveedores {
-  id            Int           @id @default(autoincrement())
+  id            Int                 @id @default(autoincrement())
   tipoProveedor TipoProveedor
   razonSocial   String
-  rfc           String        @unique
-  correo        String        @unique
+  rfc           String              @unique
+  correo        String              @unique
   telefono      String
   direccion     String
   fuenteAlta    FuenteAltaProveedor @default(MANUAL)
-  fechaAlta     DateTime      @default(now())
+  fechaAlta     DateTime            @default(now())
+
+  @@index([tipoProveedor])
 }
 
 model Usuario {
-  id           Int           @id @default(autoincrement())
-  nombre       String
-  correo       String        @unique
+  id            Int           @id @default(autoincrement())
+  nombre        String
+  correo        String        @unique
   tipoUsuario   TipoUsuario   @default(VIEWER)
-  estado       EstadoUsuario  @default(ACTIVO)
-  passwordHash String
+  estado        EstadoUsuario @default(ACTIVO)
+  passwordHash  String
   fechaRegistro DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  updatedAt     DateTime      @updatedAt
+
+  @@index([tipoUsuario, estado])
+}
+
+model Trafico {
+  id                   String        @id @default(uuid())
+  clienteId            Int?
+  tipoOperacion        TipoOperacion
+  aduana               String
+  eta                  DateTime?
+  etd                  DateTime?
+  folioManual          String?
+  referenciaAutomatica String        @unique
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  cliente      Cliente?      @relation(fields: [clienteId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  contenedores Contenedor[]
+  documento    Documento?
+  pasos        TraficoPaso[]
+  depositos    Deposito[]
+
+  @@index([clienteId])
+  @@index([tipoOperacion, aduana])
+  @@index([folioManual])
+}
+
+model Contenedor {
+  id               String   @id @default(uuid())
+  traficoId        String
+  numeroContenedor String
+  tipoContenedor   String?
+  precinto         String?
+  naviera          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  trafico Trafico @relation(fields: [traficoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([traficoId, numeroContenedor])
+  @@index([traficoId])
+}
+
+model Paso {
+  id        String        @id @default(uuid())
+  clave     HitoOperativo @unique
+  nombre    String
+  orden     Int           @unique
+  activo    Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  traficoPasos TraficoPaso[]
+}
+
+model TraficoPaso {
+  id              String    @id @default(uuid())
+  traficoId       String
+  pasoId          String
+  fechaInicio     DateTime
+  fechaFin        DateTime?
+  tiempoInvertido Int?
+  observaciones   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  trafico Trafico @relation(fields: [traficoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  paso    Paso    @relation(fields: [pasoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([traficoId, pasoId])
+  @@index([traficoId])
+  @@index([pasoId])
+  @@index([fechaInicio])
+}
+
+model Documento {
+  id             String   @id @default(uuid())
+  traficoId      String   @unique
+  facturaExiste  Boolean  @default(false)
+  facturaUrl     String?
+  blExiste       Boolean  @default(false)
+  blUrl          String?
+  plExiste       Boolean  @default(false)
+  plUrl          String?
+  coExiste       Boolean  @default(false)
+  coUrl          String?
+  permisosExiste Boolean  @default(false)
+  permisosUrl    String?
+  cmExiste       Boolean  @default(false)
+  cmUrl          String?
+  htExiste       Boolean  @default(false)
+  htUrl          String?
+  hsExiste       Boolean  @default(false)
+  hsUrl          String?
+  fotosExiste    Boolean  @default(false)
+  fotosUrl       String?
+  otrosExiste    Boolean  @default(false)
+  otrosUrl       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  trafico Trafico @relation(fields: [traficoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([traficoId])
+}
+
+model Deposito {
+  id            String   @id @default(uuid())
+  traficoId     String
+  folioDeposito String   @unique
+  monto         Decimal  @db.Decimal(14, 2)
+  moneda        String   @default("MXN")
+  banco         String?
+  referencia    String?
+  fechaDeposito DateTime
+  observaciones String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  trafico Trafico @relation(fields: [traficoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([traficoId])
+  @@index([fechaDeposito])
 }

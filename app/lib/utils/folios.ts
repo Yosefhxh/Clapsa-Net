@@ -1,5 +1,5 @@
 // app/lib/utils/folios.ts
-import prisma from '@/app/lib/prisma';
+import prisma from '@/lib/prisma';
 
 export async function generarSiguienteFolio(tipo: 'DIRECTO' | 'FORWARDER') {
   const prefijo = tipo === 'DIRECTO' ? 'CLPD' : 'CLPF';

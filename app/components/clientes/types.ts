@@ -1,4 +1,6 @@
-export type TipoCliente = "DIRECTO" | "FORWARDER";
+import { TipoCliente, TipoOperacion } from "@prisma/client";
+
+export { TipoCliente, TipoOperacion };
 
 export interface Cliente {
   id: number;

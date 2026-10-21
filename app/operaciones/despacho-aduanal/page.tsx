@@ -1,189 +1,134 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
-import { DespachoAduanalHeader } from "@/app/components/despacho-aduanal/DespachoAduanalHeader";
-import { FolioHeader } from "@/app/components/despacho-aduanal/FolioHeader";
-import { MasterDataSection } from "@/app/components/despacho-aduanal/MasterDataSection";
-import { ChecklistSection } from "@/app/components/despacho-aduanal/ChecklistSection";
-import { SearchBar } from "@/app/components/despacho-aduanal/SearchBar";
-import { WorkflowTable } from "@/app/components/despacho-aduanal/WorkflowTable";
-import { ProgressWidget } from "@/app/components/despacho-aduanal/ProgressWidget";
-import { HistorialWidget } from "@/app/components/despacho-aduanal/HistorialWidget";
+import { OperationLayout } from "@/app/components/trafico/OperationLayout";
+import { OperationGlobalStatus, OperationLayoutData } from "@/app/components/trafico/types";
 import {
-  EstadoOperacion,
-  HistorialCambio,
-  PasoDespacho,
-  PasoEstado,
-  TipoOperacion,
-  checklistPorOperacion,
-  estadoLabel,
-} from "@/app/components/despacho-aduanal/types";
-import { STORAGE_KEY } from "@/app/components/despacho-aduanal/types";
+  asignarClienteDespacho,
+  actualizarEstadoEtapaDespacho,
+  obtenerClientesOperacion,
+  obtenerOperacionDespacho,
+  subirDocumentoOperacion,
+  validarDocumentoOperacion,
+} from "@/app/lib/actions/despacho";
 import {
-  crearEstadoInicial,
-  fechaCortaISO,
-  fechaActual,
-} from "@/app/components/despacho-aduanal/utils";
+  construirBitacoraOperacion,
+  construirDocumentRows,
+  construirResumenOperacion,
+  construirStageRows,
+} from "@/app/lib/utils/despacho";
+import { HitoOperativo } from "@prisma/client";
 
-export default function DespachoAduanalPage() {
-  const [busqueda, setBusqueda] = useState("");
-  const [estadoInicial] = useState(() => crearEstadoInicial());
-  const [operacion, setOperacion] = useState<EstadoOperacion>(
-    estadoInicial.operacion
-  );
-  const [pasos, setPasos] = useState<PasoDespacho[]>(estadoInicial.pasos);
-  const [documentos, setDocumentos] = useState<Record<string, string>>(
-    estadoInicial.documentos
-  );
-  const [historial, setHistorial] = useState<HistorialCambio[]>(
-    estadoInicial.historial
-  );
+function buildFallbackOperation(): OperationLayoutData {
+  const now = new Date();
+  const pasoLabels = [
+    "Previo en Origen",
+    "Flete Marítimo",
+    "Flete Aéreo",
+    "F.T. Intermodal",
+    "Despacho Aduanero",
+    "F.T. Nacional",
+    "UVA",
+    "Almacenaje",
+    "Maniobras en Almacén",
+    "Maniobras Portuarias",
+    "Otras",
+  ];
 
-  // Persistencia en localStorage
-  useEffect(() => {
-    if (!operacion.folio) return;
+  return {
+    id: "draft-operacion",
+    clienteId: null,
+    tipoOperacion: "IMPO",
+    aduana: "Manzanillo",
+    eta: now,
+    etd: null,
+    folioManual: null,
+    referenciaAutomatica: "CLPD-26-00001",
+    createdAt: now,
+    updatedAt: now,
+    cliente: null,
+    contenedores: [],
+    documento: null,
+    pasos: pasoLabels.map((nombre, index) => ({
+      id: `draft-step-${index + 1}`,
+      traficoId: "draft-operacion",
+      pasoId: `draft-paso-${index + 1}`,
+      fechaInicio: null,
+      fechaFin: null,
+      tiempoInvertido: null,
+      createdAt: now,
+      updatedAt: now,
+      paso: {
+        id: `draft-paso-${index + 1}`,
+        clave:
+          [
+            HitoOperativo.PREVIO_ORIGEN,
+            HitoOperativo.FLETE_MARITIMO,
+            HitoOperativo.FLETE_AEREO,
+            HitoOperativo.FT_INTERMODAL,
+            HitoOperativo.DESPACHO_ADUANERO,
+            HitoOperativo.FT_NACIONAL,
+            HitoOperativo.UVA,
+            HitoOperativo.ALMACENAJE,
+            HitoOperativo.MANIOBRAS_ALMACEN,
+            HitoOperativo.MANIOBRAS_PORTUARIAS,
+            HitoOperativo.OTRAS,
+          ][index],
+        nombre,
+        orden: index + 1,
+        activo: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    })),
+  } as OperationLayoutData;
+}
 
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        operacion,
-        pasos,
-        documentos,
-        historial,
-      })
-    );
-  }, [operacion, pasos, documentos, historial]);
+function resolveEstadoGlobal(etapas: ReturnType<typeof construirStageRows>): OperationGlobalStatus {
+  if (etapas.length === 0) return "detenido";
+  if (etapas.every((etapa) => etapa.estado === "completado")) return "finalizado";
+  if (etapas.some((etapa) => etapa.estado === "en-proceso")) return "en-proceso";
+  return "detenido";
+}
 
-  // Lógica de filtrado
-  const pasosFiltrados = pasos.filter((paso) => {
-    const term = busqueda.toLowerCase();
-    return (
-      paso.etapa.toLowerCase().includes(term) ||
-      estadoLabel[paso.estado].toLowerCase().includes(term)
-    );
-  });
+export default async function DespachoAduanalPage() {
+  const [clientes, operationFromDb] = await Promise.all([
+    obtenerClientesOperacion(),
+    obtenerOperacionDespacho(),
+  ]);
 
-  // Cálculo de progreso
-  const progreso = useMemo(() => {
-    const score = pasos.reduce((acc, paso) => {
-      if (paso.estado === "completado") return acc + 1;
-      if (paso.estado === "en-proceso") return acc + 0.5;
-      return acc;
-    }, 0);
-
-    return Math.round((score / pasos.length) * 100);
-  }, [pasos]);
-
-  // Agregación de historial
-  const agregarHistorial = (mensaje: string) => {
-    setHistorial((prev) => {
-      const nextId = (prev[0]?.id ?? 0) + 1;
-      const entrada: HistorialCambio = {
-        id: nextId,
-        mensaje,
-        fecha: fechaActual(),
-      };
-
-      return [entrada, ...prev].slice(0, 20);
-    });
-  };
-
-  // Manejadores de eventos
-  const handleCambioOperacion = <K extends keyof EstadoOperacion>(
-    campo: K,
-    valor: EstadoOperacion[K]
-  ) => {
-    setOperacion((prev) => ({ ...prev, [campo]: valor }));
-  };
-
-  const handleTipoOperacion = (tipo: TipoOperacion) => {
-    setOperacion((prev) => ({
-      ...prev,
-      tipoOperacion: tipo,
-      eta: tipo === "IMPO" ? prev.eta || fechaCortaISO() : "",
-      etd: tipo === "EXPO" ? prev.etd || fechaCortaISO() : "",
-    }));
-
-    setDocumentos((prev) => {
-      const validos = checklistPorOperacion[tipo];
-      const depurado: Record<string, string> = {};
-
-      validos.forEach((doc) => {
-        if (prev[doc]) depurado[doc] = prev[doc];
-      });
-
-      return depurado;
-    });
-
-    agregarHistorial(`Tipo de operacion cambiado a ${tipo}`);
-  };
-
-  const handleUploadDocumento = (documento: string, file: File | null) => {
-    if (!file) return;
-
-    setDocumentos((prev) => ({ ...prev, [documento]: file.name }));
-    agregarHistorial(`Archivo cargado en ${documento}: ${file.name}`);
-  };
-
-  const handleEstadoPaso = (id: number, estado: PasoEstado) => {
-    setPasos((prev) =>
-      prev.map((paso) => {
-        if (paso.id !== id) return paso;
-
-        return {
-          ...paso,
-          estado,
-          fecha: estado === "pendiente" ? "-" : fechaCortaISO(),
-        };
-      })
-    );
-
-    const etapa = pasos.find((paso) => paso.id === id)?.etapa;
-    if (etapa)
-      agregarHistorial(
-        `Etapa actualizada: ${etapa} -> ${estadoLabel[estado]}`
-      );
-  };
+  const operation = operationFromDb ?? buildFallbackOperation();
+  const resumen = construirResumenOperacion(operation);
+  const etapas = construirStageRows(operation);
+  const documentos = construirDocumentRows(operation);
+  const historial = construirBitacoraOperacion(operation);
+  const estadoGlobal = resolveEstadoGlobal(etapas);
 
   return (
     <div className="space-y-8">
-      <DespachoAduanalHeader />
-
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <FolioHeader folio={operacion.folio} pasos={pasos} />
-        <MasterDataSection
-          operacion={operacion}
-          onCambioOperacion={handleCambioOperacion}
-          onTipoOperacion={handleTipoOperacion}
-        />
-
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <ChecklistSection
-                tipoOperacion={operacion.tipoOperacion}
-                documentos={documentos}
-                onUploadDocumento={handleUploadDocumento}
-              />
-
-              <SearchBar
-                busqueda={busqueda}
-                onBusquedaChange={setBusqueda}
-              />
-
-              <WorkflowTable
-                pasos={pasosFiltrados}
-                onEstadoPaso={handleEstadoPaso}
-              />
-            </div>
-
-            <div className="space-y-4">
-              <ProgressWidget pasos={pasos} progreso={progreso} />
-              <HistorialWidget historial={historial} />
-            </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden p-6">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Despacho Aduanal</h1>
+            <p className="text-slate-500 text-sm">Seguimiento operativo del pedimento y avance por etapa.</p>
           </div>
         </div>
       </div>
+
+      <OperationLayout
+        operation={operation}
+        clientes={clientes}
+        documentos={documentos}
+        historial={historial}
+        resumen={{
+          ...resumen,
+          etapasCompletadas: resumen.etapasCompletadas,
+          etapasTotales: resumen.etapasTotales,
+        }}
+        etapas={etapas}
+        estadoGlobal={estadoGlobal}
+        onAssignCliente={asignarClienteDespacho}
+        onChangeEstadoEtapa={actualizarEstadoEtapaDespacho}
+        onUploadDocumento={subirDocumentoOperacion}
+        onValidarDocumento={validarDocumentoOperacion}
+      />
     </div>
   );
 }
