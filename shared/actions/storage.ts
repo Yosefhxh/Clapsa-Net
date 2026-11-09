@@ -2,6 +2,7 @@
 
 import { put } from '@vercel/blob'
 import { randomUUID } from 'node:crypto'
+import { requerirUsuario } from '@/shared/auth/session'
 
 export type UploadDocumentResult =
   | {
@@ -37,6 +38,7 @@ function validarPdf(file: File) {
 
 export async function uploadDocument(formData: FormData): Promise<UploadDocumentResult> {
   try {
+    await requerirUsuario()
     const fileEntry = formData.get('file')
     const rawFolder = formData.get('folder')
     const rawPrefix = formData.get('prefix')

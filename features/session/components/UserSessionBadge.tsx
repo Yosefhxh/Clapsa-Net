@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { LogIn, LogOut, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
+import { cerrarSesionAction } from "@/features/usuarios";
 import { useSession } from "./SessionProvider";
 
 export function UserSessionBadge() {
-  const router = useRouter();
-  const { user, isReady, clearSession } = useSession();
+  const { user } = useSession();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -23,31 +21,7 @@ export function UserSessionBadge() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!isReady) {
-    return (
-      <div className="flex items-center gap-3 rounded-full bg-white/80 px-4 py-2 backdrop-blur-sm">
-        <div className="h-10 w-10 animate-pulse rounded-full bg-slate-100" />
-        <div className="h-4 w-28 animate-pulse rounded bg-slate-100" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Link
-        href="/login"
-        className="group flex items-center gap-3 rounded-full bg-white/80 px-4 py-2 backdrop-blur-sm transition-colors hover:bg-white"
-      >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition-colors group-hover:bg-aduanaBlue/10 group-hover:text-aduanaBlue">
-          <LogIn className="h-4 w-4" />
-        </div>
-        <div className="leading-tight">
-          <p className="text-sm font-medium text-slate-800">Iniciar sesión</p>
-          <p className="text-[11px] text-slate-500">Acceso al sistema</p>
-        </div>
-      </Link>
-    );
-  }
+  if (!user) return null;
 
   return (
     <div ref={menuRef} className="relative">
@@ -68,18 +42,15 @@ export function UserSessionBadge() {
 
       {open ? (
         <div className="absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-lg border border-linea bg-white shadow-lg">
+          <form action={cerrarSesionAction}>
           <button
-            type="button"
-            onClick={() => {
-              clearSession();
-              setOpen(false);
-              router.replace("/login");
-            }}
+            type="submit"
             className="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 transition-colors hover:bg-tinte hover:text-red-600 focus-visible:outline-aduanaBlue"
           >
             <LogOut className="h-4 w-4" />
             Cerrar sesión
           </button>
+          </form>
         </div>
       ) : null}
     </div>

@@ -36,8 +36,3 @@ export const CLIENTES_TABS: SectionTab[] = [
   { href: "/clientes/directo", label: "Directo" },
   { href: "/clientes/forwarder", label: "Forwarder" },
 ];
-
-export const PROVEEDORES_TABS: SectionTab[] = [
-  { href: "/proveedores/alta", label: "Alta" },
-  { href: "/proveedores/busqueda", label: "Búsqueda" },
-];
