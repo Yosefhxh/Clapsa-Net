@@ -41,7 +41,7 @@ export function LoginDateTimeDisplay() {
     : "Sesión no iniciada";
 
   return (
-    <div className="flex items-center gap-1.5 text-gray-500 text-sm">
+    <div className="clp-page-sub flex items-center gap-1.5 text-sm">
       <Calendar className="w-4 h-4" />
       <span suppressHydrationWarning>
         {loginDate ? `Ingreso: ${formattedLoginDate}` : `Hora actual: ${formattedDate}`}

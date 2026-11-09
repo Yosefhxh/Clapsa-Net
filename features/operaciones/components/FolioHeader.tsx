@@ -10,9 +10,9 @@ export function FolioHeader({ folio, pasos }: FolioHeaderProps) {
   const completados = pasos.filter((paso) => paso.estado === "completado").length;
 
   return (
-    <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div className="clp-panel-head flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-blue-50 rounded-lg">
+        <div className="clp-icono">
           <FileText className="w-4 h-4 text-aduanaBlue" />
         </div>
         <div>

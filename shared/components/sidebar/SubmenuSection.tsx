@@ -27,22 +27,21 @@ export function SubmenuSection({
   defaultHref,
 }: SubmenuSectionProps) {
   return (
-    <li className="w-full">
+    <li className="relative shrink-0 md:w-11">
+      {/* Celular: fila con texto; el submenú se despliega debajo */}
       <div
-        className={`flex items-center justify-between rounded-xl transition-all ${
-          isActive ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/10"
-        }`}
+        className={`clp-nav-item justify-between md:hidden ${isActive ? "clp-nav-item-activa" : ""}`}
       >
-        <Link href={defaultHref} className="flex flex-1 items-center gap-4 py-3 pl-3 pr-2">
-          <Icon className="w-5 h-5" />
-          <span className="font-medium text-[15px]">{label}</span>
+        <Link href={defaultHref} className="flex flex-1 items-center gap-3 py-2.5 pl-3 pr-2">
+          <Icon className="w-[18px] h-[18px]" />
+          <span className="font-medium text-sm">{label}</span>
         </Link>
 
         <button
           type="button"
           onClick={onToggle}
           aria-label={isOpen ? `Cerrar ${label}` : `Abrir ${label}`}
-          className="mr-2 rounded-md p-1 text-white/60 transition hover:text-white"
+          className="mr-2 rounded-md p-1 opacity-60 transition hover:opacity-100"
         >
           {isOpen ? (
             <ChevronDown className="w-4 h-4" />
@@ -53,12 +52,28 @@ export function SubmenuSection({
       </div>
 
       {isOpen && (
-        <ul className="mt-1 ml-9 space-y-1 border-l border-white/20 pl-2">
+        <ul className="mt-1 ml-9 space-y-1 border-l border-white/25 pl-2 md:hidden">
           {submenuItems.map((item) => (
             <SubmenuItem key={item.href} href={item.href} label={item.label} />
           ))}
         </ul>
       )}
+
+      {/* Escritorio: solo el icono; abre el menú completo */}
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={label}
+        aria-expanded={isOpen}
+        aria-controls="menu-completo"
+        data-menu-control
+        className={`clp-nav-item hidden h-11 justify-center md:flex ${isActive ? "clp-nav-item-activa" : ""}`}
+      >
+        <Icon className="w-[25px] h-[25px]" />
+        <span aria-hidden="true" className="clp-nav-tip">
+          {label}
+        </span>
+      </button>
     </li>
   );
 }

@@ -142,80 +142,80 @@ export default function UsuariosPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Gestión de Usuarios</h1>
-          <p className="text-gray-600">Usuarios de Clapsa Net</p>
+    <div>
+      <div>
+        <div className="clp-page-head">
+          <h1 className="clp-page-title">Gestión de Usuarios</h1>
+          <p className="clp-page-sub mt-0.5 text-sm">Usuarios de Clapsa Net</p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-3 mb-5">
           <input
             type="text"
             placeholder="Buscar..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+            className="clp-input md:flex-1"
           />
           <button
             onClick={abrirModalCrear}
-            className="flex items-center gap-2 px-4 py-2 bg-aduanaBlue/10 text-aduanaBlue border border-aduanaBlue/20 rounded-lg hover:bg-aduanaBlue/15 hover:border-aduanaBlue/30 font-medium transition-colors"
+            className="clp-btn clp-btn-primary"
           >
             <Plus className="w-4 h-4" />
             Nuevo Usuario
           </button>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 bg-slate-50 border-b border-slate-100">
+        <div className="clp-card overflow-hidden">
+          <div className="clp-panel-head">
             <p className="text-sm text-slate-600">
               Total de usuarios registrados: <strong>{usuarios.length}</strong>
             </p>
           </div>
-          <table className="w-full text-left border-collapse">
+          <table className="clp-table">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Nombre</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Correo</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Tipo</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Estado</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-center">Acciones</th>
+              <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th className="text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody>
               {usuariosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
+                  <td colSpan={5} className="clp-table-vacia">
                     {usuarios.length === 0 ? 'No hay usuarios registrados' : 'No se encontraron usuarios'}
                   </td>
                 </tr>
               ) : (
                 usuariosFiltrados.map((usuario) => (
-                  <tr key={usuario.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 text-slate-700 text-sm font-medium">{usuario.nombre}</td>
-                    <td className="px-6 py-4 text-slate-600 text-sm">{usuario.correo}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getColorTipoUsuario(usuario.tipoUsuario)}`}>
+                  <tr key={usuario.id}>
+                    <td className="font-medium">{usuario.nombre}</td>
+                    <td>{usuario.correo}</td>
+                    <td>
+                      <span className={`clp-badge ${getColorTipoUsuario(usuario.tipoUsuario)}`}>
                         {usuario.tipoUsuario}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getColorEstado(usuario.estado)}`}>
+                    <td>
+                      <span className={`clp-badge ${getColorEstado(usuario.estado)}`}>
                         {usuario.estado === 'activo' ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => abrirModalEditar(usuario)}
-                          className="p-2 text-slate-400 hover:text-aduanaBlue transition-colors"
+                          className="clp-icon-btn"
                           title="Editar usuario"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleEliminarUsuario(usuario.id)}
-                          className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                          className="clp-icon-btn clp-icon-btn-danger"
                           title="Eliminar usuario"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -230,55 +230,55 @@ export default function UsuariosPage() {
         </div>
 
         {mostrarModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 flex items-center justify-between p-6 border-b border-slate-100 bg-white">
-                <h2 className="text-xl font-bold text-slate-800">{modalMode === "create" ? "Nuevo Usuario" : "Editar Usuario"}</h2>
-                <button onClick={cerrarModal} className="p-1 text-slate-400 hover:text-slate-600">
-                  <X className="w-6 h-6" />
+          <div className="clp-modal-scrim">
+            <div className="clp-modal">
+              <div className="clp-modal-head">
+                <h2 className="clp-modal-title">{modalMode === "create" ? "Nuevo Usuario" : "Editar Usuario"}</h2>
+                <button onClick={cerrarModal} className="clp-icon-btn">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-2">Nombre</label>
+                  <label className="clp-label">Nombre</label>
                   <input
                     type="text"
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                     placeholder="Nombre completo"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                    className="clp-input"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-2">Correo</label>
+                  <label className="clp-label">Correo</label>
                   <input
                     type="email"
                     value={formData.correo}
                     onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
                     placeholder="usuario@empresa.com"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                    className="clp-input"
                   />
                 </div>
                 {modalMode === "create" && (
                   <div>
-                    <label className="text-sm font-medium text-slate-700 block mb-2">Contraseña</label>
+                    <label className="clp-label">Contraseña</label>
                     <input
                       type="password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       placeholder="Mínimo 6 caracteres"
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                      className="clp-input"
                     />
                     <p className="text-xs text-slate-500 mt-1">Mínimo 6 caracteres</p>
                   </div>
                 )}
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-2">Tipo de Usuario</label>
+                  <label className="clp-label">Tipo de Usuario</label>
                   <select
                     value={formData.tipoUsuario}
                     onChange={(e) => setFormData({ ...formData, tipoUsuario: e.target.value as TipoUsuario })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                    className="clp-input"
                   >
                     {TIPOS_USUARIO.map((tipo) => (
                       <option key={tipo} value={tipo}>{tipo}</option>
@@ -286,11 +286,11 @@ export default function UsuariosPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-2">Estado</label>
+                  <label className="clp-label">Estado</label>
                   <select
                     value={formData.estado}
                     onChange={(e) => setFormData({ ...formData, estado: e.target.value as "activo" | "inactivo" })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                    className="clp-input"
                   >
                     <option value="activo">Activo</option>
                     <option value="inactivo">Inactivo</option>
@@ -298,17 +298,17 @@ export default function UsuariosPage() {
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-slate-100 px-6 pb-6">
+              <div className="flex gap-3 pt-4 border-t border-linea px-6 pb-6">
                 <button
                   onClick={cerrarModal}
-                  className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                  className="clp-btn clp-btn-secondary flex-1"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleGuardarUsuario}
                   disabled={procesando}
-                  className="flex-1 px-4 py-2 bg-aduanaBlue text-white rounded-lg hover:bg-aduanaBlue/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="clp-btn clp-btn-primary flex-1"
                 >
                   {procesando ? <Loader2 className="w-4 h-4 inline animate-spin mr-2" /> : null}
                   {procesando ? "Guardando..." : (modalMode === "create" ? "Registrar" : "Actualizar")}

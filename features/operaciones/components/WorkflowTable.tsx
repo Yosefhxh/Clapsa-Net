@@ -9,26 +9,26 @@ interface WorkflowTableProps {
 export function WorkflowTable({ pasos, onEstadoPaso }: WorkflowTableProps) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse min-w-[780px]">
+      <table className="clp-table  min-w-[780px]">
         <thead>
-          <tr className="bg-slate-50 border-b border-slate-100">
-            <th className="px-6 py-4 text-sm font-semibold text-slate-600">
+          <tr>
+            <th>
               Etapa
             </th>
-            <th className="px-6 py-4 text-sm font-semibold text-slate-600">
+            <th>
               Fecha
             </th>
-            <th className="px-6 py-4 text-sm font-semibold text-slate-600">
+            <th>
               Estado
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-50">
+        <tbody>
           {pasos.map((paso) => (
-            <tr key={paso.id} className="hover:bg-slate-50/50 transition-colors">
-              <td className="px-6 py-4">
+            <tr key={paso.id}>
+              <td>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-50 rounded-lg">
+                  <div className="clp-icono">
                     {paso.estado === "completado" ? (
                       <CheckCircle2 className="w-4 h-4 text-green-600" />
                     ) : (
@@ -40,13 +40,13 @@ export function WorkflowTable({ pasos, onEstadoPaso }: WorkflowTableProps) {
                   </span>
                 </div>
               </td>
-              <td className="px-6 py-4 text-slate-600 text-sm">
+              <td>
                 {paso.fecha}
               </td>
-              <td className="px-6 py-4 text-sm">
+              <td>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                    className={`clp-badge ${
                       estadoStyles[paso.estado]
                     }`}
                   >
@@ -57,7 +57,7 @@ export function WorkflowTable({ pasos, onEstadoPaso }: WorkflowTableProps) {
                     onChange={(e) =>
                       onEstadoPaso(paso.id, e.target.value as PasoEstado)
                     }
-                    className="px-2 py-1 border border-slate-200 rounded-lg text-xs text-slate-600"
+                    className="clp-input h-8 w-auto text-xs"
                   >
                     <option value="pendiente">Pendiente</option>
                     <option value="en-proceso">En Proceso</option>

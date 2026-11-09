@@ -139,8 +139,8 @@ export function TimeDashboard({ traficoId, pasos, onTimerAction }: TimeDashboard
     return (
         <section className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-800">Dashboard de Tiempos</h3>
-                <span className="text-xs px-3 py-1 rounded-lg bg-aduanaBlue/10 text-aduanaBlue border border-aduanaBlue/20 font-medium">
+                <h3 className="clp-section-title text-lg">Dashboard de Tiempos</h3>
+                <span className="clp-chip">
                     {pasosRender.length} hitos
                 </span>
             </div>
@@ -155,14 +155,14 @@ export function TimeDashboard({ traficoId, pasos, onTimerAction }: TimeDashboard
                     const isLoading = loadingPasoId === paso.pasoId;
 
                     return (
-                        <article key={paso.pasoId} className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm space-y-3">
+                        <article key={paso.pasoId} className="clp-card p-5 space-y-3">
                             <div className="flex items-start justify-between gap-2">
                                 <div>
                                     <p className="text-sm font-semibold text-slate-800">{paso.nombre}</p>
                                     <p className="text-xs text-slate-500">SLA: {formatearDuracion(paso.tiempoInvertido)}</p>
                                 </div>
 
-                                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${estadoStyles[estado]}`}>
+                                <span className={`clp-badge ${estadoStyles[estado]}`}>
                                     {estado === "pendiente" ? "Pendiente" : estado === "en-proceso" ? "En proceso" : "Completado"}
                                 </span>
                             </div>
@@ -183,7 +183,7 @@ export function TimeDashboard({ traficoId, pasos, onTimerAction }: TimeDashboard
                                     type="button"
                                     onClick={() => manejarTimer(paso, "start")}
                                     disabled={isLoading || estado === "en-proceso"}
-                                    className="px-3 py-2 text-sm rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="clp-btn clp-btn-secondary"
                                 >
                                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Iniciar"}
                                 </button>
@@ -191,7 +191,7 @@ export function TimeDashboard({ traficoId, pasos, onTimerAction }: TimeDashboard
                                     type="button"
                                     onClick={() => manejarTimer(paso, "stop")}
                                     disabled={isLoading || estado !== "en-proceso"}
-                                    className="px-3 py-2 text-sm rounded-lg bg-aduanaBlue text-white hover:bg-aduanaBlue/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="clp-btn clp-btn-primary"
                                 >
                                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Detener"}
                                 </button>

@@ -37,7 +37,7 @@ export function OperationHeader({
   const progress = etapasTotales > 0 ? Math.round((etapasCompletadas / etapasTotales) * 100) : 0;
 
   return (
-    <header className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 md:p-5 space-y-4">
+    <header className="clp-card p-4 md:p-5 space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Operación de Tráfico</p>
@@ -45,7 +45,7 @@ export function OperationHeader({
           <p className="text-sm text-slate-500">Cliente: {clienteNombre}</p>
         </div>
 
-        <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${statusStyles[estadoGlobal]}`}>
+        <span className={`clp-badge clp-badge-lg ${statusStyles[estadoGlobal]}`}>
           {getIcon(estadoGlobal)}
           {getLabel(estadoGlobal)}
         </span>
@@ -58,7 +58,7 @@ export function OperationHeader({
             {etapasCompletadas}/{etapasTotales} etapas ({progress}%)
           </span>
         </div>
-        <div className="w-full h-2.5 rounded-full bg-slate-200 overflow-hidden">
+        <div className="clp-progreso">
           <div className="h-full bg-aduanaBlue transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
