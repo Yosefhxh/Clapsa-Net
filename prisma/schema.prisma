@@ -181,6 +181,7 @@ model Usuario {
   estado        EstadoUsuario @default(ACTIVO)
   passwordHash  String
   fechaRegistro DateTime      @default(now())
+  ultimoAcceso  DateTime?
   updatedAt     DateTime      @updatedAt
 
   sesiones             Sesion[]

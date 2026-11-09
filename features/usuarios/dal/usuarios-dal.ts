@@ -11,10 +11,12 @@ const camposPublicos = {
   tipoUsuario: true,
   estado: true,
   fechaRegistro: true,
+  ultimoAcceso: true,
 } satisfies Prisma.UsuarioSelect;
 
 export type UsuarioPublico = Prisma.UsuarioGetPayload<{ select: typeof camposPublicos }>;
 
+/** Usuarios con la fecha de su último inicio de sesión. */
 export async function dalObtenerUsuarios(): Promise<UsuarioPublico[]> {
   return prisma.usuario.findMany({ select: camposPublicos, orderBy: { fechaRegistro: 'desc' } });
 }

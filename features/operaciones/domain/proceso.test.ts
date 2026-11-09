@@ -107,9 +107,14 @@ describe('estado, avance y situación', () => {
     expect(avance(pasos)).toEqual({ completados: 2, total: 4, porcentaje: 50 })
   })
 
-  it('la fase actual es la primera con pendientes', () => {
+  it('la fase actual sigue a la actividad más avanzada', () => {
     expect(faseActual(pasos, ctx)).toBe(6)
-    expect(faseActual(pasos, { ...ctx, documentosObligatoriosAprobados: false })).toBe(1)
+    // Un paso opcional pendiente en una fase anterior no regresa la operación.
+    const conUva = [...pasos, { clave: 'UVA' as const, fase: 2, orden: 2, estado: 'PENDIENTE' as const }]
+    expect(faseActual(conUva, ctx)).toBe(6)
+    const sinActividad = pasos.map((p) => ({ ...p, estado: p.estado === 'NO_APLICA' ? p.estado : ('PENDIENTE' as const) }))
+    expect(faseActual(sinActividad, { ...ctx, documentosObligatoriosAprobados: false })).toBe(1)
+    expect(faseActual(sinActividad, ctx)).toBe(2)
   })
 
   it('describe la situación para la bandeja', () => {
