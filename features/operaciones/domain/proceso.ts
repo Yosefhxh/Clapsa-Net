@@ -156,15 +156,21 @@ export function avance(pasos: PasoResumen[]) {
 }
 
 /**
- * Fase actual: la primera con pasos sin terminar. La fase 1 (apertura) depende de
- * cliente y documentos, que no son pasos.
+ * Fase actual: la más avanzada en la que ya se trabajó; si esa fase quedó completa, la
+ * siguiente que tenga pasos. Así un paso opcional olvidado (p. ej. UVA) no "regresa" la
+ * operación a una fase anterior. Sin actividad: fase 1 hasta tener cliente y documentos.
  */
 export function faseActual(pasos: PasoResumen[], ctx: Pick<ContextoOperacion, 'tieneCliente' | 'tieneImportador' | 'documentosObligatoriosAprobados'>): number {
-  if (!ctx.tieneCliente || !ctx.tieneImportador || !ctx.documentosObligatoriosAprobados) return 1
-  for (let fase = 2; fase <= 8; fase++) {
-    if (pasos.some((p) => p.fase === fase && p.estado !== 'COMPLETADO' && p.estado !== 'NO_APLICA')) return fase
-  }
-  return 8
+  const aperturaLista = ctx.tieneCliente && ctx.tieneImportador && ctx.documentosObligatoriosAprobados
+  const aplican = pasos.filter((p) => p.estado !== 'NO_APLICA')
+  const conActividad = aplican.filter((p) => p.estado !== 'PENDIENTE')
+  if (!conActividad.length) return aperturaLista ? 2 : 1
+
+  const masAvanzada = Math.max(...conActividad.map((p) => p.fase))
+  const terminada = aplican.filter((p) => p.fase === masAvanzada).every((p) => p.estado === 'COMPLETADO')
+  if (!terminada) return masAvanzada
+  const siguiente = aplican.map((p) => p.fase).filter((f) => f > masAvanzada).sort((a, b) => a - b)[0]
+  return siguiente ?? masAvanzada
 }
 
 /** Etiqueta corta de la situación de la operación, para la bandeja y el Home. */

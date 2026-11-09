@@ -44,9 +44,10 @@ export async function iniciarSesionAction(correo: string, password: string) {
     const { valida, requiereActualizar } = await verificarPassword(password, usuario.passwordHash);
     if (!valida) return credencialesInvalidas;
 
-    if (requiereActualizar) {
-      await dalActualizarUsuario(usuario.id, { passwordHash: await hashearPassword(password) });
-    }
+    await dalActualizarUsuario(usuario.id, {
+      ultimoAcceso: new Date(),
+      ...(requiereActualizar ? { passwordHash: await hashearPassword(password) } : {}),
+    });
 
     await crearSesion(usuario.id);
     return { success: true as const };

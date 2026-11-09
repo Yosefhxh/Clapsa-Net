@@ -168,9 +168,9 @@ export function TabEtapas({ op, proveedores }: { op: OperacionDetalle; proveedor
                         </div>
                       </td>
                       <td><PillPaso estado={p.estado} /></td>
-                      <td className="text-sm tabular-nums text-slate-500">{formatoFechaHora(p.fechaInicio)}</td>
-                      <td className="text-sm tabular-nums text-slate-500">{formatoFechaHora(p.fechaFin)}</td>
-                      <td className="text-sm"><Sla p={p} /></td>
+                      <td className="whitespace-nowrap text-sm tabular-nums text-slate-500">{formatoFechaHora(p.fechaInicio)}</td>
+                      <td className="whitespace-nowrap text-sm tabular-nums text-slate-500">{formatoFechaHora(p.fechaFin)}</td>
+                      <td className="whitespace-nowrap text-sm"><Sla p={p} /></td>
                       <td className="text-sm">
                         {p.esServicio ? (
                           p.proveedor ? (
@@ -188,7 +188,7 @@ export function TabEtapas({ op, proveedores }: { op: OperacionDetalle; proveedor
                           <div><div>{p.responsable ?? "Sin asignar"}</div><div className="text-xs text-slate-500">Interno</div></div>
                         )}
                       </td>
-                      <td><div className="flex flex-wrap justify-end gap-1.5">{botones(p)}</div></td>
+                      <td><div className="flex justify-end gap-1.5 whitespace-nowrap">{botones(p)}</div></td>
                     </tr>
                   ))}
                 </Fragment>
