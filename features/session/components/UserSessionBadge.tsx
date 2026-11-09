@@ -54,20 +54,20 @@ export function UserSessionBadge() {
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex items-center gap-3 rounded-full bg-white/80 px-4 py-2 text-left backdrop-blur-sm transition-colors hover:bg-white"
+        className="flex items-center gap-3 rounded-lg px-2 py-1 text-left transition-colors hover:bg-white/10"
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
           <User className="h-4 w-4" />
         </div>
         <div className="min-w-0 leading-tight">
-          <p className="truncate text-base font-medium text-slate-700">{user.nombre}</p>
+          <p className="max-w-[6rem] truncate text-sm font-semibold text-white sm:max-w-[14rem]">{user.nombre}</p>
         </div>
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-lg border border-linea bg-white shadow-lg">
           <button
             type="button"
             onClick={() => {
@@ -75,7 +75,7 @@ export function UserSessionBadge() {
               setOpen(false);
               router.replace("/login");
             }}
-            className="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 transition-colors hover:bg-slate-50 hover:text-red-600"
+            className="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 transition-colors hover:bg-tinte hover:text-red-600 focus-visible:outline-aduanaBlue"
           >
             <LogOut className="h-4 w-4" />
             Cerrar sesión

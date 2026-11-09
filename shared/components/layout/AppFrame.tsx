@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/shared/components/sidebar/Sidebar";
-import { UserSessionBadge, useSession } from "@/features/session";
+import { useSession } from "@/features/session";
+import { Header } from "./Header";
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -38,13 +39,12 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-slate-100">
-      <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col bg-background">
-        <header className="flex h-16 items-center justify-end border-b border-slate-200/80 bg-white/95 px-6 backdrop-blur">
-          <UserSessionBadge />
-        </header>
-        <main className="flex-1 overflow-y-auto bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="clp-marino flex h-screen flex-col overflow-hidden">
+      <Header />
+      {/* Desde tablet la pantalla clara contiene también el menú; en celular solo el contenido. */}
+      <div className="flex min-h-0 flex-1 flex-col md:clp-pantalla md:mx-[50px] md:mb-[30px] md:flex-row md:overflow-hidden md:bg-lienzo lg:mb-16">
+        <Sidebar />
+        <main className="max-md:clp-pantalla min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 max-md:m-2 max-md:bg-lienzo sm:px-6 md:pl-5 lg:pl-11 lg:pr-12 lg:pt-12 lg:pb-12">
           <div className="mx-auto w-full max-w-none">{children}</div>
         </main>
       </div>

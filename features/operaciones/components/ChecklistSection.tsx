@@ -18,12 +18,12 @@ export function ChecklistSection({
   ).length;
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+    <div className="clp-card p-5">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-slate-700">
+        <h3 className="clp-section-title">
           Checklist Documental
         </h3>
-        <span className="text-xs px-3 py-1 rounded-lg bg-aduanaBlue/10 text-aduanaBlue border border-aduanaBlue/20 font-medium">
+        <span className="clp-chip">
           {checklistCompletado}/{checklistActual.length} documentos
         </span>
       </div>
@@ -36,7 +36,7 @@ export function ChecklistSection({
           return (
             <div
               key={doc}
-              className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 px-3 py-3 border border-slate-200 rounded-lg"
+              className="clp-fila flex flex-col md:flex-row md:items-center md:justify-between gap-2 px-3 py-3"
             >
               <div>
                 <p className="text-sm font-medium text-slate-700">{doc}</p>
@@ -55,7 +55,7 @@ export function ChecklistSection({
                 />
                 <label
                   htmlFor={inputId}
-                  className="inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="clp-btn clp-btn-secondary cursor-pointer"
                 >
                   <Upload className="w-4 h-4" />
                   Upload

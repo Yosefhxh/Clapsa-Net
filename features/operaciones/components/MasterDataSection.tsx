@@ -17,7 +17,7 @@ export function MasterDataSection({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6 border-b border-slate-100">
       <div>
-        <p className="text-xs text-slate-500 uppercase tracking-wide">
+        <p className="clp-label">
           Cliente (Ficticio)
         </p>
         <input
@@ -26,11 +26,11 @@ export function MasterDataSection({
           onChange={(e) =>
             onCambioOperacion("clienteNombre", e.target.value)
           }
-          className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/15 focus:border-aduanaBlue/30 text-sm"
+          className="clp-input"
         />
       </div>
       <div>
-        <p className="text-xs text-slate-500 uppercase tracking-wide">
+        <p className="clp-label">
           Tipo de Cliente
         </p>
         <select
@@ -38,31 +38,31 @@ export function MasterDataSection({
           onChange={(e) =>
             onCambioOperacion("clienteTipo", e.target.value as TipoCliente)
           }
-          className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/15 focus:border-aduanaBlue/30 text-sm"
+          className="clp-input"
         >
           <option value="DIRECTO">Directo</option>
           <option value="FORWARDER">Forwarder</option>
         </select>
       </div>
       <div>
-        <p className="text-xs text-slate-500 uppercase tracking-wide">RFC</p>
+        <p className="clp-label">RFC</p>
         <input
           type="text"
           value={operacion.rfc}
           onChange={(e) =>
             onCambioOperacion("rfc", e.target.value.toUpperCase())
           }
-          className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/15 focus:border-aduanaBlue/30 text-sm"
+          className="clp-input"
         />
       </div>
       <div>
-        <p className="text-xs text-slate-500 uppercase tracking-wide">
+        <p className="clp-label">
           Aduana
         </p>
         <select
           value={operacion.aduana}
           onChange={(e) => onCambioOperacion("aduana", e.target.value)}
-          className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/15 focus:border-aduanaBlue/30 text-sm"
+          className="clp-input"
         >
           {aduanas.map((aduana) => (
             <option key={aduana} value={aduana}>
@@ -72,20 +72,20 @@ export function MasterDataSection({
         </select>
       </div>
       <div>
-        <p className="text-xs text-slate-500 uppercase tracking-wide">
+        <p className="clp-label">
           Tipo de Operacion
         </p>
         <select
           value={operacion.tipoOperacion}
           onChange={(e) => onTipoOperacion(e.target.value as TipoOperacion)}
-          className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/15 focus:border-aduanaBlue/30 text-sm"
+          className="clp-input"
         >
           <option value="IMPO">IMPO</option>
           <option value="EXPO">EXPO</option>
         </select>
       </div>
       <div>
-        <p className="text-xs text-slate-500 uppercase tracking-wide">
+        <p className="clp-label">
           {operacion.tipoOperacion === "IMPO" ? "ETA" : "ETD"}
         </p>
         <input
@@ -98,7 +98,7 @@ export function MasterDataSection({
               ? onCambioOperacion("eta", e.target.value)
               : onCambioOperacion("etd", e.target.value)
           }
-          className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/15 focus:border-aduanaBlue/30 text-sm"
+          className="clp-input"
         />
       </div>
     </div>

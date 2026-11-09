@@ -79,7 +79,7 @@ export function OperationLayout({
 
   return (
     <section className="space-y-4">
-      <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/80 py-1">
+      <div className="sticky top-0 z-30 bg-lienzo py-1">
         <OperationHeader {...header} />
       </div>
 

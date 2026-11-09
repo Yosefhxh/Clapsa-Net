@@ -62,22 +62,22 @@ export function OperationTrackingTab({ traficoId, etapas, onChangeEstado }: Oper
 
   return (
     <section className="space-y-4">
-      <div className="bg-white border border-slate-100 rounded-xl shadow-sm p-4">
-        <label className="text-sm font-medium text-slate-700 block mb-2">Filtrar etapa o estado</label>
+      <div className="clp-card p-5">
+        <label className="clp-label">Filtrar etapa o estado</label>
         <input
           type="text"
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
           placeholder="Filtrar etapa o estado..."
-          className="w-full md:max-w-md px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+          className="clp-input md:max-w-md"
         />
       </div>
 
       <div className={`space-y-3 ${isPending ? "opacity-70 transition-opacity" : ""}`}>
         {etapasFiltradas.map((etapa) => (
-          <article key={etapa.id} className="bg-white border border-slate-100 rounded-xl shadow-sm p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <article key={etapa.id} className="clp-card p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">{getIcon(etapa.estado)}</div>
+              <div className="clp-icono">{getIcon(etapa.estado)}</div>
               <div>
                 <p className="text-sm font-semibold text-slate-800">{etapa.nombre}</p>
                 <p className="text-xs text-slate-500">
@@ -90,27 +90,27 @@ export function OperationTrackingTab({ traficoId, etapas, onChangeEstado }: Oper
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${stageStyles[etapa.estado]}`}>
+              <span className={`clp-badge ${stageStyles[etapa.estado]}`}>
                 {stageLabels[etapa.estado]}
               </span>
               <button
                 type="button"
                 onClick={() => handleChangeEstado(etapa.pasoId, "pendiente")}
-                className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50"
+                className="clp-btn clp-btn-secondary clp-btn-sm"
               >
                 {nextActionLabel.pendiente}
               </button>
               <button
                 type="button"
                 onClick={() => handleChangeEstado(etapa.pasoId, "en-proceso")}
-                className="px-2.5 py-1.5 text-xs border border-amber-300 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100"
+                className="clp-btn clp-btn-sm border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
               >
                 {nextActionLabel["en-proceso"]}
               </button>
               <button
                 type="button"
                 onClick={() => handleChangeEstado(etapa.pasoId, "completado")}
-                className="px-2.5 py-1.5 text-xs border border-green-300 rounded-lg text-green-700 bg-green-50 hover:bg-green-100"
+                className="clp-btn clp-btn-sm border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
               >
                 {nextActionLabel.completado}
               </button>

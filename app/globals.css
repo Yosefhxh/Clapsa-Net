@@ -3,17 +3,725 @@
 @theme {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
-  --color-aduanaBlue: #242B83;
-}
+  --color-aduanaBlue: #153079;
+  --color-aduanaBlue-oscuro: #112869;
+  --color-tinte: #EEF1F8;
+  --color-lienzo: #ECEDF0;
+  --color-linea: #D5D7DF;
+  --color-bruma: #95B5B8;
 
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
 
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
+    --clp-degradado: linear-gradient(135deg, #173584 0%, var(--color-aduanaBlue) 45%, var(--color-aduanaBlue-oscuro) 100%);
+    --clp-sombra: 0 1px 2px rgb(17 40 105 / 0.05), 0 10px 24px -18px rgb(17 40 105 / 0.28);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  button:not(:disabled),
+  label[for],
+  select {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-aduanaBlue);
+    outline-offset: 2px;
+  }
+}
+
+/* El azul CLAPSA es el marco de la aplicación, como el bisel de un monitor; el
+   contenido es la pantalla empotrada en él, con superficies blancas. */
+/* Utilidad (no componente) para poder aplicarla por tamaño de pantalla: md:clp-pantalla. */
+@utility clp-pantalla {
+  border: 1px solid var(--color-aduanaBlue-oscuro);
+  border-radius: 1rem;
+  box-shadow: inset 0 2px 8px rgb(17 40 105 / 0.2);
+}
+
+@layer components {
+  .clp-marino {
+    background: var(--clp-degradado);
+  }
+
+  .clp-nav {
+    scrollbar-color: rgb(255 255 255 / 0.25) transparent;
+  }
+
+  .clp-header :focus-visible,
+  .clp-nav :focus-visible {
+    outline-width: 1.5px;
+    outline-color: #fff;
+  }
+
+  .clp-nav-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    border-radius: 8px;
+    color: rgb(255 255 255 / 0.8);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .clp-nav-item:hover {
+    background: rgb(255 255 255 / 0.1);
+    color: #fff;
+  }
+
+  .clp-nav-item-activa,
+  .clp-nav-item-activa:hover {
+    background: #fff;
+    box-shadow: inset 3px 0 0 var(--color-bruma);
+    color: var(--color-aduanaBlue);
+  }
+
+  /*
+   * Desde tablet el menú son dos cápsulas azules dentro de la pantalla clara:
+   * la principal arranca a la altura del título de la página y la de cuenta
+   * (Usuarios, Configuración) queda abajo con el mismo margen.
+   * El nav ya tiene 12px de margen (my-3), así que el desfase completa el
+   * padding superior del <main>: py-6 (24px) en tablet y pt-12 (48px) en escritorio.
+   */
+  @media (min-width: 48rem) {
+    .clp-nav {
+      --clp-capsula-arriba: 12px;
+      --clp-capsula-abajo: 12px;
+    }
+
+    .clp-capsula {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      border-radius: 1rem;
+      background: var(--clp-degradado);
+      padding: 22px 12px;
+      box-shadow: 0 6px 16px -10px rgb(17 40 105 / 0.5);
+    }
+
+    /*
+     * La principal mide 420px (56px entre iconos, 38px arriba y abajo).
+     * En pantallas bajas se encoge y los iconos se juntan hasta 8px.
+     */
+    .clp-capsula-principal {
+      flex: 0 1 420px;
+      min-height: 0;
+      justify-content: space-between;
+      gap: 8px;
+      padding-block: 38px;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .clp-nav {
+      --clp-capsula-arriba: 36px;
+      --clp-capsula-abajo: 36px;
+    }
+  }
+
+  @media (min-width: 48rem) {
+
+    .clp-nav-item {
+      position: relative;
+      justify-content: center;
+    }
+
+    .clp-nav-item:hover {
+      background: transparent;
+    }
+
+    .clp-nav-item::before {
+      content: "";
+      position: absolute;
+      top: 8px;
+      bottom: 8px;
+      left: -12px;
+      width: 2px;
+      border-radius: 1px;
+      background: #fff;
+      transform: scaleY(0);
+      transition: transform 0.15s ease;
+    }
+
+    .clp-nav-item:hover::before,
+    .clp-nav-item:focus-visible::before,
+    .clp-nav-item[aria-expanded="true"]::before {
+      transform: scaleY(1);
+    }
+
+    .clp-nav-item-activa,
+    .clp-nav-item-activa:hover {
+      border: 2px solid transparent;
+      background: #fff padding-box;
+      box-shadow: none;
+    }
+
+    .clp-nav-item-activa::before {
+      display: none;
+    }
+  }
+
+  .clp-nav-tip {
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 12px);
+    border-radius: 6px;
+    background: var(--color-aduanaBlue-oscuro);
+    padding: 0.25rem 0.625rem;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-4px, -50%);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .clp-nav-item:hover .clp-nav-tip,
+  .clp-nav-item:focus-visible .clp-nav-tip {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+
+  .clp-nav-item[aria-expanded="true"] .clp-nav-tip {
+    display: none;
+  }
+
+  [data-menu-abierto] .clp-nav-tip {
+    display: none;
+  }
+
+  /* Menú completo: sale de atrás de la cápsula y esta lo recorta por la izquierda. */
+  .clp-cajon-marco {
+    position: absolute;
+    /* Abre donde empieza la cápsula visible. */
+    top: var(--clp-capsula-arriba);
+    left: 100%;
+    align-items: flex-start;
+    /* Recorta solo el lado izquierdo: el panel es más alto que la cápsula. */
+    clip-path: inset(-100vh -100vw -100vh 0);
+    padding: 0 20px 12px 0;
+    pointer-events: none;
+  }
+
+  .clp-cajon {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 13rem;
+    max-height: calc(100dvh - 12rem);
+    overflow-y: auto;
+    border: 1px solid rgb(255 255 255 / 0.18);
+    border-left: 0;
+    border-radius: 0 12px 12px 0;
+    background: #1b3c91;
+    padding: 0.625rem;
+    box-shadow: 0 10px 24px -8px rgb(17 40 105 / 0.45);
+    pointer-events: auto;
+    transform: translateX(-105%);
+    transition: transform 0.18s ease-in, visibility 0s linear 0.18s;
+    visibility: hidden;
+  }
+
+  .clp-cajon[data-abierto] {
+    transform: none;
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s;
+    visibility: visible;
+  }
+
+  /* Cada sección se separa de la anterior para que sus opciones se lean como un grupo. */
+  .clp-cajon > * + * {
+    border-top: 1px solid rgb(255 255 255 / 0.15);
+    padding-top: 0.5rem;
+  }
+
+  .clp-cajon a {
+    border-radius: 6px;
+    padding-inline: 0.5rem;
+  }
+
+  .clp-cajon a:hover {
+    background: rgb(255 255 255 / 0.1);
+  }
+
+  .clp-cajon a[aria-current="page"] {
+    background: rgb(255 255 255 / 0.16);
+  }
+
+  .clp-cajon-titulo {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 0.375rem 0.5rem;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .clp-cajon-titulo:hover,
+  .clp-cajon-titulo-activo {
+    background: rgb(255 255 255 / 0.1);
+  }
+
+  .clp-cajon-flecha {
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-left: auto;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  .clp-cajon-titulo-activo .clp-cajon-flecha {
+    transform: rotate(90deg);
+  }
+
+  /* La línea nace bajo el icono de la sección y une sus opciones con ella. */
+  .clp-cajon-sub {
+    margin-top: 0.125rem;
+    margin-left: 1rem;
+    border-left: 1px solid rgb(255 255 255 / 0.3);
+    padding-left: 0.5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .clp-nav-item::before,
+    .clp-nav-tip,
+    .clp-cajon,
+    .clp-cajon[data-abierto] {
+      transition: none;
+    }
+  }
+
+  .clp-page-sub {
+    color: var(--color-slate-600);
+  }
+
+  .clp-page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--color-aduanaBlue);
+  }
+
+  .clp-page-head .clp-page-title {
+    font-size: 1.75rem;
+  }
+
+  /* Sub opciones de un módulo (Clientes, Proveedores) debajo del título. */
+  .clp-subnav {
+    display: inline-flex;
+    gap: 4px;
+    margin-top: 1.125rem;
+    border: 1px solid var(--color-linea);
+    border-radius: 10px;
+    background: #fff;
+    padding: 4px;
+    box-shadow: var(--clp-sombra);
+  }
+
+  .clp-subnav a {
+    border-radius: 7px;
+    padding: 0.5rem 1.125rem;
+    color: var(--color-slate-600);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .clp-subnav a:hover {
+    background: var(--color-tinte);
+    color: var(--color-aduanaBlue);
+  }
+
+  .clp-subnav a[aria-current="page"] {
+    background: var(--color-aduanaBlue);
+    color: #fff;
+  }
+
+  .clp-section-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-aduanaBlue);
+  }
+
+  .clp-card {
+    border: 1px solid var(--color-linea);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: var(--clp-sombra);
+  }
+
+  .clp-panel-head {
+    border-bottom: 1px solid var(--color-linea);
+    padding: 0.875rem 1.25rem;
+    font-size: 0.875rem;
+    color: var(--color-slate-500);
+  }
+
+  .clp-panel-head strong {
+    font-weight: 700;
+    color: var(--color-aduanaBlue);
+  }
+
+  .clp-dato {
+    border-radius: 8px;
+    background: var(--color-tinte);
+    padding: 0.625rem 0.875rem;
+  }
+
+  .clp-fila {
+    border: 1px solid var(--color-linea);
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .clp-icono {
+    display: inline-flex;
+    height: 2.25rem;
+    width: 2.25rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: var(--color-tinte);
+  }
+
+  /* Tarjetas de indicadores: blancas; el color elegido en Widgets va en el icono */
+  .clp-stat {
+    border: 1px solid var(--color-linea);
+    border-radius: 10px;
+    background: #fff;
+    padding: 1.25rem;
+    box-shadow: var(--clp-sombra);
+  }
+
+  .clp-stat-icono {
+    display: inline-flex;
+    height: 2.5rem;
+    width: 2.5rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    box-shadow: inset 0 0 0 1px rgb(21 48 121 / 0.1);
+  }
+
+  .clp-stat-valor {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-aduanaBlue);
+  }
+
+  .clp-btn {
+    display: inline-flex;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 0.4375rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .clp-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .clp-btn-sm {
+    min-height: 2rem;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+  }
+
+  .clp-btn-primary {
+    background: var(--color-aduanaBlue);
+    color: #fff;
+  }
+
+  .clp-btn-primary:hover:not(:disabled) {
+    background: var(--color-aduanaBlue-oscuro);
+  }
+
+  .clp-btn-secondary {
+    border-color: var(--color-linea);
+    background: #fff;
+    color: var(--color-aduanaBlue);
+  }
+
+  .clp-btn-secondary:hover:not(:disabled) {
+    background: var(--color-tinte);
+  }
+
+  .clp-btn-danger {
+    border-color: var(--color-red-200);
+    background: var(--color-red-50);
+    color: var(--color-red-700);
+  }
+
+  .clp-btn-danger:hover:not(:disabled) {
+    background: var(--color-red-100);
+  }
+
+  .clp-icon-btn {
+    display: inline-flex;
+    height: 2.125rem;
+    width: 2.125rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    color: var(--color-slate-500);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .clp-icon-btn:hover {
+    background: var(--color-tinte);
+    color: var(--color-aduanaBlue);
+  }
+
+  .clp-icon-btn-danger:hover {
+    background: var(--color-red-50);
+    color: var(--color-red-500);
+  }
+
+  .clp-label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-slate-600);
+  }
+
+  .clp-input {
+    height: 2.625rem;
+    width: 100%;
+    border: 1px solid var(--color-linea);
+    border-radius: 8px;
+    background: #fff;
+    padding: 0 0.875rem;
+    font-size: 0.875rem;
+    color: var(--color-slate-700);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .clp-input::placeholder {
+    color: var(--color-slate-500);
+  }
+
+  .clp-input:focus {
+    outline: none;
+    border-color: var(--color-aduanaBlue);
+    box-shadow: 0 0 0 3px rgb(21 48 121 / 0.15);
+  }
+
+  .clp-input[readonly] {
+    background: var(--color-lienzo);
+    color: var(--color-slate-600);
+  }
+
+  textarea.clp-input {
+    height: auto;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .clp-dropzone {
+    display: flex;
+    cursor: pointer;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--color-bruma);
+    border-radius: 8px;
+    background: var(--color-tinte);
+    padding: 1.25rem;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .clp-dropzone:hover,
+  .clp-dropzone-activa {
+    border-color: var(--color-aduanaBlue);
+  }
+
+  .clp-dropzone-activa {
+    background: rgb(21 48 121 / 0.08);
+  }
+
+  .clp-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    border-radius: 8px;
+    background: var(--color-red-50);
+    padding: 0.75rem 1rem;
+  }
+
+  .clp-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.875rem;
+  }
+
+  .clp-table thead th {
+    padding: 0.875rem 1.25rem;
+    background: var(--color-tinte);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--color-aduanaBlue);
+  }
+
+  .clp-table tbody td {
+    border-top: 1px solid var(--color-linea);
+    padding: 0.875rem 1.25rem;
+    color: var(--color-slate-600);
+  }
+
+  .clp-table tbody tr:hover td {
+    background: var(--color-tinte);
+  }
+
+  .clp-table tbody td.clp-table-vacia {
+    padding: 3rem 1.25rem;
+    background: none;
+    text-align: center;
+    color: var(--color-slate-500);
+  }
+
+  .clp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 6px;
+    padding: 0.1875rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .clp-badge-lg {
+    padding: 0.3125rem 0.75rem;
+  }
+
+  .clp-chip {
+    border-radius: 6px;
+    background: var(--color-tinte);
+    padding: 0.1875rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-aduanaBlue);
+  }
+
+  .clp-tab {
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-slate-600);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .clp-tab:hover {
+    background: var(--color-tinte);
+    color: var(--color-aduanaBlue);
+  }
+
+  .clp-tab-activa,
+  .clp-tab-activa:hover {
+    background: var(--color-aduanaBlue);
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .clp-progreso {
+    height: 0.5rem;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: var(--color-tinte);
+  }
+
+  .clp-modal-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgb(17 40 105 / 0.55);
+  }
+
+  .clp-modal {
+    max-height: 90vh;
+    width: 100%;
+    max-width: 28rem;
+    overflow-y: auto;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .clp-modal-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--color-linea);
+    background: #fff;
+    padding: 1.25rem 1.5rem 1rem;
+  }
+
+  .clp-modal-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-aduanaBlue);
+  }
+}
+
+@layer utilities {
+  /* Ganan a los estilos que SubmenuItem usa en el menú de celular. */
+  .clp-cajon a {
+    color: rgb(255 255 255 / 0.88);
+  }
+
+  .clp-cajon-enlace a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+  }
+
+  .clp-cajon-enlace a,
+  .clp-cajon a[aria-current="page"] {
+    color: #fff;
+  }
+
+  /* Va en utilities para imponerse a los márgenes de space-y-* del contenedor. */
+  .clp-page-head {
+    margin-bottom: 1.5rem;
   }
 }

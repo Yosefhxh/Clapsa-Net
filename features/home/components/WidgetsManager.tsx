@@ -104,35 +104,35 @@ export function WidgetsManager({ onClose }: { onClose?: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div 
-        className="absolute inset-0 bg-black/40 transition-opacity" 
+        className="absolute inset-0 bg-slate-900/45 transition-opacity" 
         onClick={() => onClose?.()} 
       />
       
-      <div className="relative z-10 w-full max-w-4xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="relative z-10 w-full max-w-4xl bg-white rounded-xl flex flex-col max-h-[90vh] overflow-hidden">
         
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
-          <h2 className="text-xl font-semibold text-gray-800">Configurar Widgets</h2>
+        <div className="clp-modal-head pb-3">
+          <h2 className="clp-modal-title">Configurar Widgets</h2>
           <button 
             onClick={() => onClose?.()}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+            className="clp-icon-btn"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto bg-gray-50/30">
+        <div className="p-6 pt-3 overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">Widgets activos</h4>
+              <h4 className="clp-section-title mb-3">Widgets activos</h4>
               <div className="space-y-3">
                 {active.map((w, i) => {
                   const Icon = ICON_MAP[w.icon] || Package;
                   return (
-                    <div key={w.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                      <div className="flex items-start justify-between gap-3 p-3 border-b border-gray-100">
+                    <div key={w.id} className="clp-fila overflow-hidden">
+                      <div className="flex items-center justify-between gap-3 p-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className={`p-2.5 rounded-xl ${w.color || "bg-blue-50"}`}>
-                            <Icon className="w-5 h-5 text-gray-800" />
+                          <div className={`clp-stat-icono ${w.color || "bg-blue-50"}`}>
+                            <Icon className="w-5 h-5 text-aduanaBlue" />
                           </div>
                           <div className="min-w-0 flex items-center h-full">
                             <div className="truncate text-sm font-semibold text-gray-900">{w.title}</div>
@@ -141,7 +141,7 @@ export function WidgetsManager({ onClose }: { onClose?: () => void }) {
 
                         {editingId === w.id ? (
                           <button
-                            className="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="clp-btn clp-btn-secondary clp-btn-sm shrink-0"
                             onClick={() => setEditingId(null)}
                           >
                             Ocultar
@@ -149,13 +149,13 @@ export function WidgetsManager({ onClose }: { onClose?: () => void }) {
                         ) : (
                           <div className="flex items-center gap-2 shrink-0">
                             <button
-                              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                              className="clp-btn clp-btn-secondary clp-btn-sm"
                               onClick={() => setEditingId(w.id)}
                             >
                               Editar
                             </button>
                             <button
-                              className="rounded-lg border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors"
+                              className="clp-btn clp-btn-danger clp-btn-sm"
                               onClick={() => removeActive(i)}
                             >
                               Quitar
@@ -165,10 +165,10 @@ export function WidgetsManager({ onClose }: { onClose?: () => void }) {
                       </div>
 
                       {editingId === w.id && (
-                        <div className="p-4 bg-gray-50">
+                        <div className="border-t border-linea p-4">
                           <div className="grid gap-5 lg:grid-cols-2">
                             <div>
-                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Color de fondo</div>
+                              <div className="clp-label">Color del icono</div>
                               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                                 {COLOR_OPTIONS.map((c) => {
                                   const selected = w.color === c;
@@ -177,7 +177,7 @@ export function WidgetsManager({ onClose }: { onClose?: () => void }) {
                                       key={c}
                                       onClick={() => updateWidget(w.id, { color: c })}
                                       className={`flex h-10 items-center justify-center rounded-lg border ${c} transition-all ${
-                                        selected ? "ring-2 ring-indigo-500 border-transparent scale-105" : "border-gray-200 hover:border-gray-400"
+                                        selected ? "ring-2 ring-aduanaBlue border-transparent" : "border-slate-200 hover:border-slate-400"
                                       }`}
                                       title={c}
                                     />
@@ -187,7 +187,7 @@ export function WidgetsManager({ onClose }: { onClose?: () => void }) {
                             </div>
 
                             <div>
-                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Icono</div>
+                              <div className="clp-label">Icono</div>
                               <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                                 {Object.keys(ICON_MAP).map((k) => {
                                   const Ik = ICON_MAP[k] || Package;
@@ -197,7 +197,7 @@ export function WidgetsManager({ onClose }: { onClose?: () => void }) {
                                       key={k}
                                       onClick={() => updateWidget(w.id, { icon: k })}
                                       className={`flex h-10 items-center justify-center rounded-lg border bg-white transition-all ${
-                                        selected ? "border-indigo-500 ring-1 ring-indigo-500 text-indigo-600" : "border-gray-200 hover:border-gray-400 text-gray-600"
+                                        selected ? "border-aduanaBlue ring-1 ring-aduanaBlue text-aduanaBlue" : "border-slate-200 hover:border-slate-400 text-slate-500"
                                       }`}
                                       title={k}
                                     >
@@ -217,26 +217,26 @@ export function WidgetsManager({ onClose }: { onClose?: () => void }) {
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">Widgets disponibles</h4>
+              <h4 className="clp-section-title mb-3">Widgets disponibles</h4>
               <div className="space-y-3">
                 {available.length === 0 ? (
-                  <div className="text-sm text-gray-500 text-center py-6 bg-white border border-dashed rounded-xl">
+                  <div className="clp-fila border-dashed py-6 text-center text-sm text-slate-400">
                     Todos los widgets están activos.
                   </div>
                 ) : (
                   available.map((w, i) => {
                     const Icon = ICON_MAP[w.icon] || Package;
                     return (
-                      <div key={w.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-white shadow-sm hover:border-emerald-200 transition-colors">
+                      <div key={w.id} className="clp-fila flex items-center justify-between gap-3 p-3">
                         <div className="flex items-center gap-3">
-                          <div className={`p-2.5 rounded-xl ${w.color || "bg-blue-50"}`}>
-                            <Icon className="w-5 h-5 text-gray-800" />
+                          <div className={`clp-stat-icono ${w.color || "bg-blue-50"}`}>
+                            <Icon className="w-5 h-5 text-aduanaBlue" />
                           </div>
                           <div className="text-sm font-semibold text-gray-900">{w.title}</div>
                         </div>
                         {/* Botón "+ Agregar" modificado a color verde claro */}
                         <button 
-                          className="text-xs px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100 font-semibold rounded-lg transition-colors" 
+                          className="clp-btn clp-btn-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100" 
                           onClick={() => addAvailable(i)}
                         >
                           Agregar
@@ -250,16 +250,16 @@ export function WidgetsManager({ onClose }: { onClose?: () => void }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-linea">
           <button 
-            className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+            className="clp-btn clp-btn-secondary"
             onClick={handleReset}
           >
             Restablecer valores
           </button>
           
           <button 
-            className="px-5 py-2 text-sm font-semibold text-white bg-[#283593] rounded-lg hover:bg-indigo-800 transition-colors shadow-sm"
+            className="clp-btn clp-btn-primary"
             onClick={() => onClose?.()}
           >
             Guardar y Cerrar

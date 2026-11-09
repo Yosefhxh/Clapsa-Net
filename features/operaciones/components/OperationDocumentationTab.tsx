@@ -66,26 +66,26 @@ export function OperationDocumentationTab({
         }));
 
     return (
-        <section className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left border-collapse">
+        <section className="clp-card overflow-x-auto">
+            <table className="clp-table min-w-[960px]">
                 <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
-                        <th className="px-4 py-3 text-xs font-semibold text-slate-600">Nombre del Documento</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-slate-600">Fecha de subida</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-slate-600">Quién lo subió</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-slate-600">Estado</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-slate-600">Acciones</th>
+                    <tr>
+                        <th>Nombre del Documento</th>
+                        <th>Fecha de subida</th>
+                        <th>Quién lo subió</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody>
                     {rows.map((documento) => (
-                        <tr key={documento.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-4 py-3 text-sm font-medium text-slate-700">{documento.nombre}</td>
-                            <td className="px-4 py-3 text-sm text-slate-600">{documento.fechaSubida ?? "-"}</td>
-                            <td className="px-4 py-3 text-sm text-slate-600">{documento.subidoPor}</td>
-                            <td className="px-4 py-3 text-sm">
+                        <tr key={documento.id}>
+                            <td className="font-medium">{documento.nombre}</td>
+                            <td>{documento.fechaSubida ?? "-"}</td>
+                            <td>{documento.subidoPor}</td>
+                            <td>
                                 <span
-                                    className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${documento.validado
+                                    className={`clp-badge ${documento.validado
                                         ? "bg-green-50 text-green-700 border border-green-200"
                                         : "bg-amber-50 text-amber-700 border border-amber-200"
                                         }`}
@@ -93,9 +93,9 @@ export function OperationDocumentationTab({
                                     {documento.validado ? "Validado" : "Pendiente"}
                                 </span>
                             </td>
-                            <td className="px-4 py-3">
+                            <td>
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <label className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
+                                    <label className="clp-btn clp-btn-secondary clp-btn-sm cursor-pointer">
                                         <UploadCloud className="w-4 h-4" />
                                         {loadingKey === documento.key ? "Subiendo..." : "Subir"}
                                         <input
@@ -109,7 +109,7 @@ export function OperationDocumentationTab({
 
                                     <button
                                         type="button"
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors"
+                                        className="clp-btn clp-btn-secondary clp-btn-sm"
                                         onClick={() => {
                                             if (documento.url) window.open(documento.url, "_blank", "noopener,noreferrer");
                                         }}
@@ -132,7 +132,7 @@ export function OperationDocumentationTab({
                                             const result = await validarDocumentoOperacion({ traficoId, documento: documento.key, aprobado: true });
                                             setMessage(result.message);
                                         }}
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-aduanaBlue text-white rounded-lg hover:bg-aduanaBlue/90 transition-colors"
+                                        className="clp-btn clp-btn-primary clp-btn-sm"
                                     >
                                         <FileCheck2 className="w-4 h-4" />
                                         Aprobar
@@ -150,7 +150,7 @@ export function OperationDocumentationTab({
                                             const result = await validarDocumentoOperacion({ traficoId, documento: documento.key, aprobado: false });
                                             setMessage(result.message);
                                         }}
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-red-300 rounded-lg text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+                                        className="clp-btn clp-btn-danger clp-btn-sm"
                                     >
                                         <FileX2 className="w-4 h-4" />
                                         Rechazar
@@ -161,7 +161,7 @@ export function OperationDocumentationTab({
                     ))}
                 </tbody>
             </table>
-            {message ? <div className="px-4 py-3 text-sm text-slate-600 border-t border-slate-100">{message}</div> : null}
+            {message ? <div className="px-4 py-3 text-sm text-slate-600 border-t border-dashed border-slate-200">{message}</div> : null}
         </section>
     );
 }

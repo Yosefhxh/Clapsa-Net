@@ -9,8 +9,8 @@ export interface OperationTabsNavProps {
 
 export function OperationTabsNav({ activeTab, onTabChange }: OperationTabsNavProps) {
   return (
-    <nav className="bg-white border border-slate-100 rounded-xl shadow-sm p-2 overflow-x-auto">
-      <ul className="flex items-center gap-2 min-w-max">
+    <nav className="overflow-x-auto">
+      <ul className="flex items-center gap-1 min-w-max">
         {tabs.map((tab) => {
           const active = activeTab === tab.id;
           return (
@@ -18,11 +18,7 @@ export function OperationTabsNav({ activeTab, onTabChange }: OperationTabsNavPro
               <button
                 type="button"
                 onClick={() => onTabChange(tab.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-aduanaBlue text-white"
-                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-                }`}
+                className={`clp-tab ${active ? "clp-tab-activa" : ""}`}
               >
                 {tab.label}
               </button>

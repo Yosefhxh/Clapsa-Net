@@ -67,45 +67,45 @@ export function OperationSummaryTab({
 
     return (
         <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] gap-4">
-            <section className="bg-white border border-slate-100 rounded-xl shadow-sm p-4 space-y-4">
-                <h3 className="text-sm font-semibold text-slate-700">Detalles del Embarque</h3>
+            <section className="clp-card p-5 space-y-4">
+                <h3 className="clp-section-title">Detalles del Embarque</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="px-3 py-2 border border-slate-200 rounded-lg">
-                        <p className="text-xs text-slate-500">Aduana</p>
+                    <div className="clp-dato">
+                        <p className="text-xs text-slate-600">Aduana</p>
                         <p className="text-sm font-medium text-slate-800">{resumen.aduana || "-"}</p>
                     </div>
-                    <div className="px-3 py-2 border border-slate-200 rounded-lg">
-                        <p className="text-xs text-slate-500">Tipo de operación</p>
+                    <div className="clp-dato">
+                        <p className="text-xs text-slate-600">Tipo de operación</p>
                         <p className="text-sm font-medium text-slate-800">{resumen.tipoOperacion}</p>
                     </div>
-                    <div className="px-3 py-2 border border-slate-200 rounded-lg md:col-span-2">
-                        <p className="text-xs text-slate-500">ETA</p>
+                    <div className="clp-dato md:col-span-2">
+                        <p className="text-xs text-slate-600">ETA</p>
                         <p className="text-sm font-medium text-slate-800">{resumen.eta ?? "-"}</p>
                     </div>
-                    <div className="px-3 py-2 border border-slate-200 rounded-lg md:col-span-2">
-                        <p className="text-xs text-slate-500">RFC del cliente</p>
+                    <div className="clp-dato md:col-span-2">
+                        <p className="text-xs text-slate-600">RFC del cliente</p>
                         <p className="text-sm font-medium text-slate-800">{resumen.rfc || "-"}</p>
                     </div>
                 </div>
 
                 <form onSubmit={onSubmit} className="space-y-3">
                     <div>
-                        <label className="text-sm font-medium text-slate-700 block mb-2">Buscar cliente</label>
+                        <label className="clp-label">Buscar cliente</label>
                         <input
                             type="text"
                             value={filter}
                             onChange={(event) => setFilter(event.target.value)}
                             placeholder="Folio, razón social o RFC"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                            className="clp-input"
                         />
                     </div>
 
                     <div>
-                        <label className="text-sm font-medium text-slate-700 block mb-2">Asignar cliente</label>
+                        <label className="clp-label">Asignar cliente</label>
                         <select
                             {...register("clienteId")}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                            className="clp-input"
                         >
                             {clientesFiltrados.map((cliente) => (
                                 <option key={cliente.id} value={cliente.id}>
@@ -119,7 +119,7 @@ export function OperationSummaryTab({
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="px-4 py-2 bg-aduanaBlue text-white rounded-lg hover:bg-aduanaBlue/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="clp-btn clp-btn-primary"
                     >
                         {isSubmitting ? "Guardando..." : "Guardar asignación"}
                     </button>
@@ -128,15 +128,15 @@ export function OperationSummaryTab({
                 </form>
             </section>
 
-            <aside className="bg-aduanaBlue/5 border border-aduanaBlue/20 rounded-xl p-4">
-                <p className="text-xs uppercase tracking-wide text-aduanaBlue font-semibold">Próximo paso a dar</p>
-                <p className="mt-2 text-sm font-medium text-slate-700">{resumen.proximoPaso}</p>
+            <aside className="h-fit rounded-[10px] bg-aduanaBlue p-5">
+                <p className="text-sm text-white/70">Próximo paso a dar</p>
+                <p className="mt-1 text-xl font-semibold text-white">{resumen.proximoPaso}</p>
                 {resumen.alertasPendientes.length > 0 ? (
                     <div className="mt-4 space-y-2">
-                        <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Alertas pendientes</p>
-                        <ul className="space-y-2 text-sm text-slate-600">
+                        <p className="text-sm text-white/70">Alertas pendientes</p>
+                        <ul className="space-y-2 text-sm text-white">
                             {resumen.alertasPendientes.map((alerta) => (
-                                <li key={alerta} className="px-3 py-2 rounded-lg bg-white border border-slate-200">
+                                <li key={alerta} className="rounded-lg bg-white/10 px-3 py-2">
                                     {alerta}
                                 </li>
                             ))}

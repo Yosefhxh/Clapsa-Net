@@ -221,7 +221,7 @@ export function ClientesManagementPage({ tipoCliente, title, description }: Clie
   }, [busqueda, clientes, sortBy, estadoFiltro]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <ClientesPageHeader title={title} description={description} />
 
       <ClientesSearchBar

@@ -38,14 +38,14 @@ export function ForwarderPanel({ forwarderNombre, clientes, onUploadDocument, on
   } = useForwarderLogic(clientes, onUploadDocument, onActualizarEncargo);
 
   return (
-    <section className="bg-white border border-slate-100 rounded-xl shadow-sm p-4 space-y-4">
+    <section className="clp-card p-5 space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-slate-800">Sub-panel de Forwarders</h3>
+        <h3 className="clp-section-title text-lg">Sub-panel de Forwarders</h3>
         <p className="text-sm text-slate-500">Forwarder: {forwarderNombre}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
-        <aside className="border border-slate-200 rounded-lg p-2 max-h-[420px] overflow-auto">
+        <aside className="clp-fila p-2 max-h-[420px] overflow-auto">
           <p className="text-xs font-semibold text-slate-500 px-2 py-2">Clientes asignados</p>
           <ul className="space-y-1">
             {flatClientes.map((cliente) => (
@@ -65,7 +65,7 @@ export function ForwarderPanel({ forwarderNombre, clientes, onUploadDocument, on
           </ul>
         </aside>
 
-        <div className="border border-slate-200 rounded-lg p-4 space-y-4">
+        <div className="clp-fila p-4 space-y-4">
           {!selectedCliente ? (
             <p className="text-sm text-slate-500">Selecciona un cliente para ver el detalle.</p>
           ) : (
@@ -75,7 +75,7 @@ export function ForwarderPanel({ forwarderNombre, clientes, onUploadDocument, on
                   <p className="text-sm font-semibold text-slate-800">{selectedCliente.razonSocial}</p>
                   <p className="text-xs text-slate-500">RFC: {selectedCliente.rfc}</p>
                 </div>
-                <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border font-semibold ${
+                <span className={`clp-badge clp-badge-lg ${
                     isVigente(selectedCliente.fechaVigenciaEncargo) ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"
                   }`}
                 >
@@ -86,17 +86,17 @@ export function ForwarderPanel({ forwarderNombre, clientes, onUploadDocument, on
 
               <form onSubmit={onSubmit} className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-2">Fecha de vigencia</label>
+                  <label className="clp-label">Fecha de vigencia</label>
                   <input
                     type="date"
                     {...register("fechaVigencia")}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                    className="clp-input"
                   />
                   {errors.fechaVigencia ? <p className="text-xs text-red-600 mt-1">{errors.fechaVigencia.message}</p> : null}
                 </div>
 
-                <div {...getRootProps()} className={`border-2 border-dashed rounded-lg p-4 cursor-pointer transition-all ${
-                    isDragActive ? "border-aduanaBlue bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-aduanaBlue"
+                <div {...getRootProps()} className={`clp-dropzone ${
+                    isDragActive ? "clp-dropzone-activa" : ""
                   }`}
                 >
                   <input {...getInputProps()} />
@@ -107,7 +107,7 @@ export function ForwarderPanel({ forwarderNombre, clientes, onUploadDocument, on
                 </div>
                 {errors.file ? <p className="text-xs text-red-600">{errors.file.message}</p> : null}
 
-                <button type="submit" disabled={subiendo} className="inline-flex items-center gap-2 px-4 py-2 bg-aduanaBlue text-white rounded-lg hover:bg-aduanaBlue/90 disabled:opacity-50">
+                <button type="submit" disabled={subiendo} className="clp-btn clp-btn-primary">
                   {subiendo ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   {subiendo ? "Guardando..." : "Guardar Encargo"}
                 </button>

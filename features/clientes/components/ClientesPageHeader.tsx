@@ -1,3 +1,5 @@
+import { CLIENTES_TABS, SectionTabs } from "@/shared/components/layout/SectionTabs";
+
 interface ClientesPageHeaderProps {
   title: string;
   description: string;
@@ -5,9 +7,10 @@ interface ClientesPageHeaderProps {
 
 export function ClientesPageHeader({ title, description }: ClientesPageHeaderProps) {
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
-      <p className="text-slate-500 text-sm">{description}</p>
+    <div className="clp-page-head">
+      <h1 className="clp-page-title">{title}</h1>
+      <p className="clp-page-sub mt-0.5 text-sm">{description}</p>
+      <SectionTabs label="Clientes" tabs={CLIENTES_TABS} />
     </div>
   );
 }

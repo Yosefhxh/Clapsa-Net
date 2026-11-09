@@ -77,21 +77,24 @@ export function StatisticsGrid() {
   };
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {widgets.map((w, i) => {
-        const Icon = ICON_MAP[w.icon] || Package;
-        return (
-          <div
-            key={w.id}
-            draggable
-            onDragStart={(e) => onDragStart(e, i)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => onDrop(e, i)}
-          >
-            <StatWidget title={w.title} icon={Icon} color={w.color} />
-          </div>
-        );
-      })}
-    </div>
+    <section>
+      <h2 className="clp-section-title mb-3">Operaciones hoy</h2>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {widgets.map((w, i) => {
+          const Icon = ICON_MAP[w.icon] || Package;
+          return (
+            <div
+              key={w.id}
+              draggable
+              onDragStart={(e) => onDragStart(e, i)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => onDrop(e, i)}
+            >
+              <StatWidget title={w.title} icon={Icon} color={w.color} />
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

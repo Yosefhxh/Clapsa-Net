@@ -6,8 +6,8 @@ interface HistorialWidgetProps {
 
 export function HistorialWidget({ historial }: HistorialWidgetProps) {
   return (
-    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-      <h3 className="text-sm font-semibold text-slate-700 mb-3">
+    <div className="clp-card p-5">
+      <h3 className="clp-section-title mb-3">
         Historial de Cambios
       </h3>
       {historial.length === 0 ? (

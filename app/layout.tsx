@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/features/session";
 import { AppFrame } from "@/shared/components/layout/AppFrame";
-const inter = Inter({ subsets: ["latin"] });
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" });
 
 export const metadata: Metadata = {
-  title: "CLAPSA NET - Tablero de Operaciones",
-  description: "Gestión eficiente de operaciones aduaneras",
+  title: "CLAPSA NET - Control de Tráficos",
+  description: "Estatus y tiempos de cada importación y exportación",
 };
 
 export default function RootLayout({
@@ -16,8 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
-      <body className={`${inter.className} bg-slate-100`}>
+    <html lang="es" className={jakarta.variable}>
+      <body className="bg-lienzo font-sans">
         <SessionProvider>
           <AppFrame>{children}</AppFrame>
         </SessionProvider>

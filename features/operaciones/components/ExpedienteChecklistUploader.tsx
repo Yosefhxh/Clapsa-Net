@@ -115,10 +115,10 @@ export function ExpedienteChecklistUploader({
   });
 
   return (
-    <section className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-4">
+    <section className="clp-card p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-700">Expediente Digital</h3>
-        <span className="text-xs px-3 py-1 rounded-lg bg-aduanaBlue/10 text-aduanaBlue border border-aduanaBlue/20 font-medium">
+        <h3 className="clp-section-title">Expediente Digital</h3>
+        <span className="clp-chip">
           {completados}/{checklist.length} cargados
         </span>
       </div>
@@ -128,9 +128,9 @@ export function ExpedienteChecklistUploader({
           {checklist.map((doc) => {
             const listo = Boolean(uploadedMap[doc]);
             return (
-              <div key={doc} className="flex items-center justify-between px-3 py-2 border border-slate-200 rounded-lg">
+              <div key={doc} className="flex items-center justify-between clp-dato">
                 <span className="text-sm font-medium text-slate-700">{doc}</span>
-                <span className={listo ? "text-green-600" : "text-slate-400"}>{listo ? "✅" : "○"}</span>
+                <span className={listo ? "text-green-600" : "text-slate-600"}>{listo ? "✅" : "○"}</span>
               </div>
             );
           })}
@@ -138,10 +138,10 @@ export function ExpedienteChecklistUploader({
 
         <form onSubmit={onSubmit} className="space-y-3">
           <div>
-            <label className="text-sm font-medium text-slate-700 block mb-2">Documento a cargar</label>
+            <label className="clp-label">Documento a cargar</label>
             <select
               {...register("documento")}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+              className="clp-input"
             >
               {checklist.map((item) => (
                 <option key={item} value={item}>
@@ -154,8 +154,8 @@ export function ExpedienteChecklistUploader({
 
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-5 cursor-pointer transition-all ${
-              isDragActive ? "border-aduanaBlue bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-aduanaBlue"
+            className={`clp-dropzone ${
+              isDragActive ? "clp-dropzone-activa" : ""
             }`}
           >
             <input {...getInputProps()} />
@@ -171,7 +171,7 @@ export function ExpedienteChecklistUploader({
           <button
             type="submit"
             disabled={subiendo}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-aduanaBlue text-white rounded-lg hover:bg-aduanaBlue/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="clp-btn clp-btn-primary"
           >
             {subiendo ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             {subiendo ? "Subiendo..." : "Cargar documento"}

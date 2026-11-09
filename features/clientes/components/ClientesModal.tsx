@@ -84,24 +84,24 @@ export function ClientesModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 flex items-center justify-between p-6 border-b border-slate-100 bg-white">
-          <h2 className="text-xl font-bold text-slate-800">
+    <div className="clp-modal-scrim">
+      <div className="clp-modal">
+        <div className="clp-modal-head">
+          <h2 className="clp-modal-title">
             {mode === "edit" ? "Editar Cliente" : "Registrar Nuevo Cliente"}
           </h2>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600">
-            <X className="w-6 h-6" />
+          <button onClick={onClose} className="clp-icon-btn">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Cargar Constancia Fiscal (Opcional)</label>
+            <label className="clp-label">Cargar Constancia Fiscal (Opcional)</label>
             <div
               {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-6 transition-all flex flex-col items-center justify-center cursor-pointer ${
-                isDragActive ? "border-aduanaBlue bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-aduanaBlue"
+              className={`clp-dropzone ${
+                isDragActive ? "clp-dropzone-activa" : ""
               }`}
             >
               <input {...getInputProps()} />
@@ -114,14 +114,14 @@ export function ClientesModal({
                 <>
                   <Upload className="w-6 h-6 text-aduanaBlue mb-2" />
                   <p className="text-sm font-medium text-slate-700">Arrastra o haz clic aquí</p>
-                  <p className="text-xs text-slate-400 mt-1">Solo PDF (Máx. 5MB)</p>
+                  <p className="text-xs text-slate-500 mt-1">Solo PDF (Máx. 5MB)</p>
                 </>
               )}
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+            <div className="clp-alert">
               <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-red-800 text-sm">{error}</p>
             </div>
@@ -129,31 +129,31 @@ export function ClientesModal({
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-slate-700 block mb-2">Razón Social</label>
+              <label className="clp-label">Razón Social</label>
               <input
                 type="text"
                 value={formData.razonSocial}
                 onChange={(e) => onChangeFormData({ ...formData, razonSocial: e.target.value })}
                 placeholder="Nombre de la empresa o persona"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                className="clp-input"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700 block mb-2">RFC *</label>
+              <label className="clp-label">RFC *</label>
               <input
                 type="text"
                 value={formData.rfc}
                 onChange={(e) => onChangeFormData({ ...formData, rfc: e.target.value.toUpperCase() })}
                 placeholder="RFC (obligatorio)"
                 maxLength={13}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                className="clp-input"
               />
               <p className="text-xs text-slate-500 mt-1">Entre 12 y 13 caracteres</p>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700 block mb-2">Calle</label>
+              <label className="clp-label">Calle</label>
               <input
                 type="text"
                 value={formData.calle}
@@ -163,13 +163,13 @@ export function ClientesModal({
                   onChangeFormData({ ...formData, calle, domicilio });
                 }}
                 placeholder="Calle y número"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                className="clp-input"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-slate-700 block mb-2">Estado</label>
+                <label className="clp-label">Estado</label>
                 <input
                   type="text"
                   value={formData.estado}
@@ -179,12 +179,12 @@ export function ClientesModal({
                     onChangeFormData({ ...formData, estado, domicilio });
                   }}
                   placeholder="Estado"
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                  className="clp-input"
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-700 block mb-2">Código Postal</label>
+                <label className="clp-label">Código Postal</label>
                 <input
                   type="text"
                   value={formData.codigoPostal}
@@ -195,19 +195,19 @@ export function ClientesModal({
                   }}
                   placeholder="00000"
                   maxLength={5}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-aduanaBlue/20"
+                  className="clp-input"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700 block mb-2">Domicilio completo</label>
+              <label className="clp-label">Domicilio completo</label>
               <input
                 type="text"
                 value={formData.domicilio}
                 readOnly
                 placeholder="Se completará automáticamente"
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-600"
+                className="clp-input"
               />
             </div>
           </div>
@@ -215,14 +215,14 @@ export function ClientesModal({
           <div className="flex gap-3 pt-4">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+              className="clp-btn clp-btn-secondary flex-1"
             >
               Cancelar
             </button>
             <button
               onClick={onSubmit}
               disabled={isSaving || isScanning || !formData.rfc.trim()}
-              className="flex-1 px-4 py-2 bg-aduanaBlue text-white rounded-lg hover:bg-aduanaBlue/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="clp-btn clp-btn-primary flex-1"
             >
               {isSaving ? <Loader2 className="w-4 h-4 inline animate-spin mr-2" /> : null}
               {isSaving ? "Guardando..." : mode === "edit" ? "Guardar cambios" : "Registrar"}

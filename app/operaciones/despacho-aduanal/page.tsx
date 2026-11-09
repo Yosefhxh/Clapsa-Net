@@ -102,12 +102,12 @@ export default async function DespachoAduanalPage() {
   const estadoGlobal = resolveEstadoGlobal(etapas);
 
   return (
-    <div className="space-y-8">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden p-6">
+    <div className="space-y-5">
+      <div className="clp-page-head">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Despacho Aduanal</h1>
-            <p className="text-slate-500 text-sm">Seguimiento operativo del pedimento y avance por etapa.</p>
+            <h1 className="clp-page-title">Despacho Aduanal</h1>
+            <p className="clp-page-sub mt-0.5 text-sm">Seguimiento operativo del pedimento y avance por etapa.</p>
           </div>
         </div>
       </div>
