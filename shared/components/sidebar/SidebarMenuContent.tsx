@@ -24,14 +24,8 @@ interface MenuLink {
 const MENU_PRINCIPAL: MenuLink[] = [
   { id: "home", label: "Home", icon: Home, href: "/", match: "/" },
   { id: "clientes", label: "Clientes", icon: Building2, href: "/clientes/directo", match: "/clientes" },
-  { id: "proveedores", label: "Proveedores", icon: Truck, href: "/proveedores/alta", match: "/proveedores" },
-  {
-    id: "operaciones",
-    label: "Operaciones",
-    icon: BriefcaseBusiness,
-    href: "/operaciones/despacho-aduanal",
-    match: "/operaciones",
-  },
+  { id: "proveedores", label: "Proveedores", icon: Truck, href: "/proveedores", match: "/proveedores" },
+  { id: "operaciones", label: "Operaciones", icon: BriefcaseBusiness, href: "/operaciones", match: "/operaciones" },
 ];
 
 /** Cápsula de abajo: administración de la cuenta. */

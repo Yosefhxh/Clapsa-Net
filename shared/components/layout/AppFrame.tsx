@@ -1,44 +1,27 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "@/shared/components/sidebar/Sidebar";
 import { useSession } from "@/features/session";
+import { ToastProvider } from "@/shared/components/ui/Toast";
 import { Header } from "./Header";
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, isReady } = useSession();
+  const { user } = useSession();
+  const enLogin = pathname === "/login";
 
+  // La cookie existe pero la sesión ya no es válida (vencida o usuario desactivado): se limpia.
   useEffect(() => {
-    if (!isReady) {
-      return;
-    }
+    if (!enLogin && !user) window.location.replace("/api/sesion/salir");
+  }, [enLogin, user]);
 
-    if (pathname !== "/login" && !user) {
-      router.replace("/login");
-      return;
-    }
-
-    if (pathname === "/login" && user) {
-      router.replace("/");
-    }
-  }, [isReady, pathname, router, user]);
-
-  if (!isReady) {
-    return null;
-  }
-
-  if (pathname === "/login") {
-    return <>{children}</>;
-  }
-
-  if (!user) {
-    return null;
-  }
+  if (enLogin) return <>{children}</>;
+  if (!user) return null;
 
   return (
+    <ToastProvider>
     <div className="clp-marino flex h-screen flex-col overflow-hidden">
       <Header />
       {/* Desde tablet la pantalla clara contiene también el menú; en celular solo el contenido. */}
@@ -49,5 +32,6 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     </div>
+    </ToastProvider>
   );
 }

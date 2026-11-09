@@ -3,6 +3,8 @@
 import { Prisma } from '@prisma/client';
 import { generarSiguienteFolio } from '@/shared/utils/folios';
 import { revalidatePath } from 'next/cache';
+import { requerirUsuario } from '@/shared/auth/session';
+import { mensajeDeError } from '@/shared/lib/resultado';
 import {
 	dalActualizarCliente,
 	dalCrearCliente,
@@ -17,6 +19,7 @@ export async function registrarCliente(datos: {
 	tipo: 'DIRECTO' | 'FORWARDER';
 }) {
 	try {
+		await requerirUsuario('catalogos.editar');
 		const nuevoFolio = await generarSiguienteFolio(datos.tipo);
 
 		const cliente = await dalCrearCliente({
@@ -40,8 +43,7 @@ export async function registrarCliente(datos: {
 			return { success: false, error: `Error de base de datos (${error.code})` };
 		}
 
-		console.error('Error registrarCliente:', error);
-		return { success: false, error: 'Error al registrar cliente' };
+		return { success: false, error: mensajeDeError(error, 'registrarCliente') };
 	}
 }
 
@@ -50,6 +52,7 @@ export async function actualizarCliente(
 	datos: { razonSocial: string; rfc: string; domicilio: string; tipo: 'DIRECTO' | 'FORWARDER' }
 ) {
 	try {
+		await requerirUsuario('catalogos.editar');
 		const cliente = await dalActualizarCliente(id, datos);
 
 		revalidatePath('/clientes/directo');
@@ -69,17 +72,18 @@ export async function actualizarCliente(
 			return { success: false, error: `Error de base de datos (${error.code})` };
 		}
 
-		console.error('Error actualizarCliente:', error);
-		return { success: false, error: 'Error al actualizar cliente' };
+		return { success: false, error: mensajeDeError(error, 'actualizarCliente') };
 	}
 }
 
 export async function obtenerClientes(tipo?: 'DIRECTO' | 'FORWARDER') {
+	await requerirUsuario();
 	return await dalObtenerClientes(tipo);
 }
 
 export async function eliminarCliente(id: number) {
 	try {
+		await requerirUsuario('catalogos.eliminar');
 		await dalEliminarCliente(id);
 
 		revalidatePath('/clientes/directo');
@@ -91,11 +95,11 @@ export async function eliminarCliente(id: number) {
 			if (error.code === 'P2025') {
 				return { success: false, error: 'El cliente ya no existe en la base de datos' };
 			}
-
-			return { success: false, error: `Error de base de datos (${error.code})` };
+			if (error.code === 'P2003') {
+				return { success: false, error: 'No se puede eliminar: el cliente tiene operaciones registradas.' };
+			}
 		}
 
-		console.error('Error eliminarCliente:', error);
-		return { success: false, error: 'Error al eliminar cliente' };
+		return { success: false, error: mensajeDeError(error, 'eliminarCliente') };
 	}
 }

@@ -38,6 +38,7 @@ enum TipoOperacion {
   EXPO
 }
 
+/// Pasos del proceso de despacho. Los 11 originales más los 5 que pide un despacho completo.
 enum HitoOperativo {
   PREVIO_ORIGEN
   FLETE_MARITIMO
@@ -50,6 +51,71 @@ enum HitoOperativo {
   MANIOBRAS_ALMACEN
   MANIOBRAS_PORTUARIAS
   OTRAS
+  CLASIFICACION
+  REVALIDACION_BL
+  PAGO_CONTRIBUCIONES
+  MODULACION
+  CUENTA_GASTOS
+}
+
+enum EstadoPaso {
+  PENDIENTE
+  EN_PROCESO
+  RECONOCIMIENTO
+  COMPLETADO
+  NO_APLICA
+}
+
+enum EstadoDocumento {
+  PENDIENTE
+  POR_REVISAR
+  APROBADO
+  RECHAZADO
+}
+
+enum TipoDocumento {
+  FACTURA
+  BL
+  PL
+  CO
+  PERMISOS
+  CM
+  HT
+  HS
+  FOTOS
+  OTROS
+}
+
+enum RequisitoDocumento {
+  OBLIGATORIO
+  SI_APLICA
+  NO_APLICA
+}
+
+enum MedioTransporte {
+  MARITIMO
+  AEREO
+  TERRESTRE
+  FERROVIARIO
+}
+
+enum Semaforo {
+  VERDE
+  ROJO
+}
+
+enum TipoEvento {
+  OPERACION
+  ASIGNACION
+  DOCUMENTO
+  ETAPA
+  COSTO
+}
+
+enum TipoCargo {
+  CONTRIBUCION
+  HONORARIO
+  OTRO
 }
 
 model Cliente {
@@ -64,9 +130,12 @@ model Cliente {
   encargoConferido     Boolean     @default(false)
   fechaVigenciaEncargo DateTime?
   pdfEncargoUrl        String?
+  /// null = sin verificar.
+  padronImportadores   Boolean?
   clientePadre         Cliente?    @relation("ClienteJerarquia", fields: [clientePadreId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   subclientes          Cliente[]   @relation("ClienteJerarquia")
-  traficos             Trafico[]
+  traficos             Trafico[]   @relation("ClienteTrafico")
+  traficosImportador   Trafico[]   @relation("ImportadorTrafico")
 
   @@index([tipo])
   @@index([clientePadreId])
@@ -82,8 +151,26 @@ model Proveedores {
   direccion     String
   fuenteAlta    FuenteAltaProveedor @default(MANUAL)
   fechaAlta     DateTime            @default(now())
+  /// Nombres de aduana del catálogo donde presta servicio.
+  aduanas       String[]            @default([])
+  servicios     ProveedorServicio[]
+  traficoPasos  TraficoPaso[]
 
   @@index([tipoProveedor])
+}
+
+/// Qué paso del despacho puede hacer cada proveedor y con qué tarifa base.
+model ProveedorServicio {
+  id          Int      @id @default(autoincrement())
+  proveedorId Int
+  pasoId      String
+  tarifaBase  Decimal? @db.Decimal(14, 2)
+
+  proveedor Proveedores @relation(fields: [proveedorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  paso      Paso        @relation(fields: [pasoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([proveedorId, pasoId])
+  @@index([pasoId])
 }
 
 model Usuario {
@@ -96,30 +183,76 @@ model Usuario {
   fechaRegistro DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  sesiones             Sesion[]
+  eventos              EventoOperacion[]
+  widgets              WidgetUsuario[]
+  traficosEjecutivo    Trafico[]            @relation("EjecutivoTrafico")
+  pasosResponsable     TraficoPaso[]        @relation("ResponsablePaso")
+  documentosSubidos    DocumentoOperacion[] @relation("DocumentoSubidoPor")
+  documentosRevisados  DocumentoOperacion[] @relation("DocumentoRevisadoPor")
+
   @@index([tipoUsuario, estado])
 }
 
+/// Sesión del lado del servidor. El id es el hash SHA-256 del token que vive en la cookie.
+model Sesion {
+  id        String   @id
+  usuarioId Int
+  expiraEn  DateTime
+  createdAt DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([usuarioId])
+  @@index([expiraEn])
+}
+
 model Trafico {
-  id                   String        @id @default(uuid())
+  id                   String          @id @default(uuid())
+  /// Cliente que solicita y paga el servicio (directo o forwarder).
   clienteId            Int?
+  /// Importador o exportador que aparece en el pedimento.
+  importadorId         Int?
   tipoOperacion        TipoOperacion
+  medioTransporte      MedioTransporte @default(MARITIMO)
   aduana               String
   eta                  DateTime?
   etd                  DateTime?
   folioManual          String?
-  referenciaAutomatica String        @unique
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  referenciaAutomatica String          @unique
+  clavePedimento       String?
+  numeroPedimento      String?
+  blGuia               String?
+  naviera              String?
+  puertoOrigen         String?
+  incoterm             String?
+  valorFactura         Decimal?        @db.Decimal(14, 2)
+  monedaFactura        String          @default("USD")
+  /// Vendedor de la factura comercial. No es un proveedor de CLAPSA.
+  vendedorExtranjero   String?
+  fracciones           String?
+  semaforo             Semaforo?
+  ejecutivoId          Int?
+  cerradaEn            DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
 
-  cliente      Cliente?      @relation(fields: [clienteId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cliente      Cliente?             @relation("ClienteTrafico", fields: [clienteId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  importador   Cliente?             @relation("ImportadorTrafico", fields: [importadorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  ejecutivo    Usuario?             @relation("EjecutivoTrafico", fields: [ejecutivoId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   contenedores Contenedor[]
   documento    Documento?
+  documentos   DocumentoOperacion[]
   pasos        TraficoPaso[]
   depositos    Deposito[]
+  eventos      EventoOperacion[]
+  cargos       CargoOperacion[]
 
   @@index([clienteId])
+  @@index([importadorId])
   @@index([tipoOperacion, aduana])
   @@index([folioManual])
+  @@index([cerradaEn])
 }
 
 model Contenedor {
@@ -138,38 +271,59 @@ model Contenedor {
   @@index([traficoId])
 }
 
+/// Catálogo de pasos del proceso. Se edita en Configuración → Proceso y etapas.
 model Paso {
-  id        String        @id @default(uuid())
-  clave     HitoOperativo @unique
-  nombre    String
-  orden     Int           @unique
-  activo    Boolean       @default(true)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id          String            @id @default(uuid())
+  clave       HitoOperativo     @unique
+  nombre      String
+  descripcion String?
+  orden       Int               @unique
+  ordenExpo   Int?
+  /// Fase (1 a 8) en una importación y en una exportación. 0 = no aplica a ese tipo.
+  faseImpo    Int               @default(0)
+  faseExpo    Int               @default(0)
+  slaHoras    Int?
+  /// Lo hace un proveedor externo; se le puede asignar proveedor y costo.
+  esServicio  Boolean           @default(false)
+  /// Medios de transporte a los que aplica. Vacío = todos.
+  medios      MedioTransporte[] @default([])
+  activo      Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   traficoPasos TraficoPaso[]
+  servicios    ProveedorServicio[]
 }
 
 model TraficoPaso {
-  id              String    @id @default(uuid())
+  id              String     @id @default(uuid())
   traficoId       String
   pasoId          String
-  fechaInicio     DateTime
+  estado          EstadoPaso @default(PENDIENTE)
+  fechaInicio     DateTime?
   fechaFin        DateTime?
   tiempoInvertido Int?
   observaciones   String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  proveedorId     Int?
+  costo           Decimal?   @db.Decimal(14, 2)
+  responsableId   Int?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
-  trafico Trafico @relation(fields: [traficoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  paso    Paso    @relation(fields: [pasoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  trafico     Trafico      @relation(fields: [traficoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  paso        Paso         @relation(fields: [pasoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  proveedor   Proveedores? @relation(fields: [proveedorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  responsable Usuario?     @relation("ResponsablePaso", fields: [responsableId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@unique([traficoId, pasoId])
   @@index([traficoId])
   @@index([pasoId])
+  @@index([estado])
   @@index([fechaInicio])
+  @@index([proveedorId])
 }
 
+/// @deprecated Reemplazado por DocumentoOperacion. Se conserva hasta confirmar la migración de datos.
 model Documento {
   id             String   @id @default(uuid())
   traficoId      String   @unique
@@ -201,6 +355,62 @@ model Documento {
   @@index([traficoId])
 }
 
+/// Un documento del expediente con su estado de revisión.
+model DocumentoOperacion {
+  id            String          @id @default(uuid())
+  traficoId     String
+  tipo          TipoDocumento
+  estado        EstadoDocumento @default(PENDIENTE)
+  url           String?
+  nombreArchivo String?
+  motivoRechazo String?
+  subidoPorId   Int?
+  subidoEn      DateTime?
+  revisadoPorId Int?
+  revisadoEn    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  trafico     Trafico  @relation(fields: [traficoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  subidoPor   Usuario? @relation("DocumentoSubidoPor", fields: [subidoPorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  revisadoPor Usuario? @relation("DocumentoRevisadoPor", fields: [revisadoPorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([traficoId, tipo])
+  @@index([estado])
+}
+
+/// Bitácora de la operación.
+model EventoOperacion {
+  id            String     @id @default(uuid())
+  traficoId     String
+  usuarioId     Int?
+  tipo          TipoEvento
+  descripcion   String
+  valorAnterior String?
+  valorNuevo    String?
+  createdAt     DateTime   @default(now())
+
+  trafico Trafico  @relation(fields: [traficoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([traficoId, createdAt])
+}
+
+/// Cargos de la cuenta de gastos que no vienen de un proveedor (contribuciones, honorarios, otros).
+model CargoOperacion {
+  id        String    @id @default(uuid())
+  traficoId String
+  tipo      TipoCargo
+  concepto  String
+  monto     Decimal   @db.Decimal(14, 2)
+  moneda    String    @default("MXN")
+  createdAt DateTime  @default(now())
+
+  trafico Trafico @relation(fields: [traficoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([traficoId])
+}
+
 model Deposito {
   id            String   @id @default(uuid())
   traficoId     String
@@ -218,4 +428,72 @@ model Deposito {
 
   @@index([traficoId])
   @@index([fechaDeposito])
+}
+
+/// Consecutivos de folios por prefijo y año. Evita folios repetidos con usuarios simultáneos.
+model Consecutivo {
+  prefijo String
+  anio    Int
+  ultimo  Int    @default(0)
+
+  @@id([prefijo, anio])
+}
+
+// ===== Configuración =====
+
+/// Registro único (id = 1) con los datos de la agencia.
+model ConfiguracionAgencia {
+  id             Int      @id @default(1)
+  razonSocial    String   @default("Conexión Logística y Aduanera del Pacífico S.A.")
+  rfc            String?
+  agenteAduanal  String?
+  patente        String?
+  honorariosBase Decimal  @default(0) @db.Decimal(14, 2)
+  ivaHonorarios  Decimal  @default(0.16) @db.Decimal(5, 4)
+  updatedAt      DateTime @updatedAt
+}
+
+model Aduana {
+  id     Int     @id @default(autoincrement())
+  clave  String  @unique
+  nombre String  @unique
+  activa Boolean @default(true)
+}
+
+model ClavePedimento {
+  clave       String  @id
+  descripcion String
+  aplicaImpo  Boolean @default(true)
+  aplicaExpo  Boolean @default(true)
+  activa      Boolean @default(true)
+}
+
+model DocumentoConfig {
+  tipo          TipoDocumento      @id
+  nombre        String
+  descripcion   String?
+  requisitoImpo RequisitoDocumento @default(SI_APLICA)
+  requisitoExpo RequisitoDocumento @default(SI_APLICA)
+}
+
+model AlertaConfig {
+  clave       String  @id
+  nombre      String
+  descripcion String
+  activa      Boolean @default(true)
+}
+
+/// Widgets que cada usuario eligió para su Home.
+model WidgetUsuario {
+  id        Int     @id @default(autoincrement())
+  usuarioId Int
+  widget    String
+  orden     Int
+  tono      String
+  umbral    Int?
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([usuarioId, widget])
+  @@index([usuarioId])
 }

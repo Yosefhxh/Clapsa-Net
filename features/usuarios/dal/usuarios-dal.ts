@@ -1,54 +1,45 @@
+import 'server-only';
+
 import prisma from '@/shared/lib/prisma';
-import { Prisma, Usuario } from '@prisma/client';
+import { EstadoUsuario, Prisma, TipoUsuario, type Usuario } from '@prisma/client';
 
-/**
- * DAL: Obtiene todos los usuarios ordenados por fecha de registro descendente.
- */
-export async function dalObtenerUsuarios(): Promise<Usuario[]> {
-  return prisma.usuario.findMany({
-    orderBy: { fechaRegistro: 'desc' },
-  });
+/** Campos seguros para enviar al navegador (nunca el hash de la contraseña). */
+const camposPublicos = {
+  id: true,
+  nombre: true,
+  correo: true,
+  tipoUsuario: true,
+  estado: true,
+  fechaRegistro: true,
+} satisfies Prisma.UsuarioSelect;
+
+export type UsuarioPublico = Prisma.UsuarioGetPayload<{ select: typeof camposPublicos }>;
+
+export async function dalObtenerUsuarios(): Promise<UsuarioPublico[]> {
+  return prisma.usuario.findMany({ select: camposPublicos, orderBy: { fechaRegistro: 'desc' } });
 }
 
-/**
- * DAL: Busca un usuario por correo electrónico (case-insensitive).
- */
+export async function dalObtenerUsuarioPorId(id: number): Promise<UsuarioPublico | null> {
+  return prisma.usuario.findUnique({ where: { id }, select: camposPublicos });
+}
+
+/** Incluye el hash: solo para verificar credenciales en el servidor. */
 export async function dalBuscarUsuarioPorCorreo(correo: string): Promise<Usuario | null> {
-  return prisma.usuario.findFirst({
-    where: {
-      correo: {
-        equals: correo,
-        mode: 'insensitive',
-      },
-    },
-  });
+  return prisma.usuario.findFirst({ where: { correo: { equals: correo, mode: 'insensitive' } } });
 }
 
-/**
- * DAL: Crea un nuevo registro de usuario en la base de datos.
- */
-export async function dalCrearUsuario(data: Prisma.UsuarioCreateInput): Promise<Usuario> {
-  return prisma.usuario.create({
-    data,
-  });
+export async function dalContarAdminsActivos(): Promise<number> {
+  return prisma.usuario.count({ where: { tipoUsuario: TipoUsuario.ADMIN, estado: EstadoUsuario.ACTIVO } });
 }
 
-/**
- * DAL: Actualiza un registro existente de usuario.
- */
-export async function dalActualizarUsuario(id: number, data: Prisma.UsuarioUpdateInput): Promise<Usuario> {
-  return prisma.usuario.update({
-    where: { id },
-    data,
-  });
+export async function dalCrearUsuario(data: Prisma.UsuarioCreateInput): Promise<UsuarioPublico> {
+  return prisma.usuario.create({ data, select: camposPublicos });
 }
 
-/**
- * DAL: Elimina un usuario por su identificador único.
- */
+export async function dalActualizarUsuario(id: number, data: Prisma.UsuarioUpdateInput): Promise<UsuarioPublico> {
+  return prisma.usuario.update({ where: { id }, data, select: camposPublicos });
+}
+
 export async function dalEliminarUsuario(id: number): Promise<void> {
-  await prisma.usuario.delete({
-    where: { id },
-  });
+  await prisma.usuario.delete({ where: { id } });
 }
-
