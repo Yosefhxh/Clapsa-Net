@@ -187,3 +187,59 @@ export function situacionOperacion(
   if (de('DESPACHO_ADUANERO') === 'COMPLETADO' && de('PAGO_CONTRIBUCIONES') !== 'COMPLETADO') return 'Por pagar pedimento'
   return FASES[ctx.tipo][faseActual(pasos, ctx) - 1]
 }
+
+/** Columnas del tablero de operaciones (aprobadas en la fase 7 del rediseño). */
+export const COLUMNAS_TABLERO = [
+  { id: 'espera', nombre: 'En espera de cliente', color: '#3157C2' },
+  { id: 'previo', nombre: 'Previo en origen', color: '#5B86E5' },
+  { id: 'transito', nombre: 'En tránsito', color: '#17677D' },
+  { id: 'pedimento', nombre: 'Por pagar pedimento', color: '#E3A23B' },
+  { id: 'reconocimiento', nombre: 'En reconocimiento', color: '#E0614F' },
+  { id: 'desaduanado', nombre: 'Desaduanado', color: '#2E9E7A' },
+] as const
+
+export type ColumnaTablero = (typeof COLUMNAS_TABLERO)[number]['id']
+
+/** Columna por fase cuando la modulación aún no ocurre (índice = fase - 1). */
+const COLUMNA_POR_FASE: Record<TipoOperacion, ColumnaTablero[]> = {
+  // 1 Apertura · 2 Clasificación · 3 Arribo → tránsito; 4 Previo; 5 Pedimento · 6 Pago · 7 en espera de modular → pedimento; 8 Entrega.
+  IMPO: ['transito', 'transito', 'transito', 'previo', 'pedimento', 'pedimento', 'pedimento', 'desaduanado'],
+  // 1-3 → previo en origen; 4 Pedimento; 5 Traslado · 6 en espera de modular → tránsito; 7 Embarque · 8 Cierre.
+  EXPO: ['previo', 'previo', 'previo', 'pedimento', 'transito', 'transito', 'desaduanado', 'desaduanado'],
+}
+
+/** En qué columna del tablero va una operación; las cerradas no van en el tablero. */
+export function columnaTablero(o: {
+  tipo: TipoOperacion
+  estado: EstadoOperacion
+  fase: number
+  estadosPasos: Partial<Record<HitoOperativo, EstadoPaso>>
+}): ColumnaTablero | null {
+  if (o.estado === 'CERRADA') return null
+  if (o.estado === 'EN_ESPERA_CLIENTE') return 'espera'
+  const modulacion = o.estadosPasos.MODULACION
+  if (modulacion === 'RECONOCIMIENTO') return 'reconocimiento'
+  if (modulacion === 'COMPLETADO') return 'desaduanado'
+  return COLUMNA_POR_FASE[o.tipo][Math.min(8, Math.max(1, o.fase)) - 1]
+}
+
+/**
+ * Lo siguiente que hay que hacer en la operación: primero cliente y documentos; después el
+ * paso en curso (o en reconocimiento) más temprano; si no hay, el primer pendiente que ya se pueda iniciar.
+ */
+export function proximoPaso(
+  pasos: (PasoResumen & { nombre: string })[],
+  ctx: ContextoOperacion & { cerrada: boolean },
+): string {
+  if (ctx.cerrada) return 'Operación cerrada'
+  if (!ctx.tieneCliente || !ctx.tieneImportador) return 'Asignar cliente e importador'
+  const orden = [...pasos].sort((a, b) => a.fase - b.fase || a.orden - b.orden)
+  const reconocimiento = orden.find((p) => p.estado === 'RECONOCIMIENTO')
+  if (reconocimiento) return 'Liberar tras reconocimiento'
+  const enCurso = orden.find((p) => p.estado === 'EN_PROCESO')
+  if (enCurso) return enCurso.nombre
+  const libre = orden.find((p) => p.estado === 'PENDIENTE' && !motivoBloqueo(p.clave, ctx))
+  if (libre) return libre.nombre
+  if (!ctx.documentosObligatoriosAprobados) return 'Aprobar documentos obligatorios'
+  return orden.some((p) => p.estado === 'PENDIENTE') ? 'Resolver pasos bloqueados' : 'Cerrar la operación'
+}

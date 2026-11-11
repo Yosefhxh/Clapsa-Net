@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   avance,
+  columnaTablero,
+  proximoPaso,
   estadoOperacion,
   faseActual,
   motivoBloqueo,
@@ -122,5 +124,43 @@ describe('estado, avance y situación', () => {
     expect(situacionOperacion(pasos, { ...ctx, tieneCliente: false })).toBe('En espera de cliente')
     const rojo = pasos.map((p) => (p.clave === 'MODULACION' ? { ...p, estado: 'RECONOCIMIENTO' as const } : p))
     expect(situacionOperacion(rojo, ctx)).toBe('En reconocimiento')
+  })
+})
+
+describe('columnaTablero', () => {
+  const op = (tipo: 'IMPO' | 'EXPO', fase: number, extra: Partial<Parameters<typeof columnaTablero>[0]> = {}) =>
+    columnaTablero({ tipo, fase, estado: 'EN_PROCESO', estadosPasos: {}, ...extra })
+
+  it('sin cliente va a espera y las cerradas no van en el tablero', () => {
+    expect(op('IMPO', 3, { estado: 'EN_ESPERA_CLIENTE' })).toBe('espera')
+    expect(op('IMPO', 8, { estado: 'CERRADA' })).toBeNull()
+  })
+  it('la modulación manda: rojo a reconocimiento, liberada a desaduanado', () => {
+    expect(op('IMPO', 7, { estadosPasos: { MODULACION: 'RECONOCIMIENTO' } })).toBe('reconocimiento')
+    expect(op('EXPO', 6, { estadosPasos: { MODULACION: 'COMPLETADO' } })).toBe('desaduanado')
+  })
+  it('importación por fase', () => {
+    expect([1, 2, 3, 4, 5, 6, 7, 8].map((f) => op('IMPO', f))).toEqual(['transito', 'transito', 'transito', 'previo', 'pedimento', 'pedimento', 'pedimento', 'desaduanado'])
+  })
+  it('exportación por fase', () => {
+    expect([1, 2, 3, 4, 5, 6, 7, 8].map((f) => op('EXPO', f))).toEqual(['previo', 'previo', 'previo', 'pedimento', 'transito', 'transito', 'desaduanado', 'desaduanado'])
+  })
+})
+
+describe('proximoPaso', () => {
+  const base = { tipo: 'IMPO' as const, tieneCliente: true, tieneImportador: true, documentosObligatoriosAprobados: true, cerrada: false }
+  const p = (clave: 'CLASIFICACION' | 'DESPACHO_ADUANERO' | 'MODULACION', fase: number, estado: 'PENDIENTE' | 'EN_PROCESO' | 'COMPLETADO' | 'RECONOCIMIENTO', nombre: string) => ({ clave, fase, orden: fase, estado, nombre })
+  it('sin cliente pide asignarlo; cerrada lo dice', () => {
+    expect(proximoPaso([], { ...base, tieneCliente: false, estados: {} })).toBe('Asignar cliente e importador')
+    expect(proximoPaso([], { ...base, cerrada: true, estados: {} })).toBe('Operación cerrada')
+  })
+  it('el paso en curso manda; luego el primer pendiente libre', () => {
+    const pasos = [p('CLASIFICACION', 2, 'COMPLETADO', 'Clasificación'), p('DESPACHO_ADUANERO', 5, 'EN_PROCESO', 'Pedimento')]
+    expect(proximoPaso(pasos, { ...base, estados: { CLASIFICACION: 'COMPLETADO', DESPACHO_ADUANERO: 'EN_PROCESO' } })).toBe('Pedimento')
+    const libres = [p('CLASIFICACION', 2, 'PENDIENTE', 'Clasificación'), p('DESPACHO_ADUANERO', 5, 'PENDIENTE', 'Pedimento')]
+    expect(proximoPaso(libres, { ...base, estados: { CLASIFICACION: 'PENDIENTE', DESPACHO_ADUANERO: 'PENDIENTE' } })).toBe('Clasificación')
+  })
+  it('reconocimiento pide liberar', () => {
+    expect(proximoPaso([p('MODULACION', 7, 'RECONOCIMIENTO', 'Modulación')], { ...base, estados: { MODULACION: 'RECONOCIMIENTO' } })).toBe('Liberar tras reconocimiento')
   })
 })

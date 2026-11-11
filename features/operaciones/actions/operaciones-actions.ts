@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { MedioTransporte, TipoOperacion } from '@prisma/client';
+import { MedioTransporte, TipoDocumento, TipoOperacion } from '@prisma/client';
 import { z } from 'zod';
 import { requerirUsuario } from '@/shared/auth/session';
 import { ejecutar, ErrorNegocio, type Resultado } from '@/shared/lib/resultado';
@@ -55,12 +55,12 @@ const esquemaNueva = z.object({
   importadorId: z.number().int().positive().nullable(),
 });
 
-export async function crearOperacionAction(datos: z.input<typeof esquemaNueva>): Promise<Resultado<{ id: string }>> {
+export async function crearOperacionAction(datos: z.input<typeof esquemaNueva>): Promise<Resultado<{ id: string; folio: string }>> {
   return ejecutar('crearOperacion', async () => {
     const usuario = await requerirUsuario('operaciones.operar');
     const id = await servicio.crearOperacion(validar(esquemaNueva, datos), usuario);
     refrescar();
-    return { id };
+    return { id, folio: await servicio.folioDeOperacion(id) };
   }, 'Operación creada.');
 }
 
@@ -97,6 +97,18 @@ export async function subirDocumentoAction(traficoId: string, documentoId: strin
     refrescar(traficoId);
     return undefined;
   }, 'Documento subido. Queda por revisar.');
+}
+
+/** Documento inicial al abrir el expediente: se sube al tipo elegido (BL, factura, packing list…). */
+export async function subirDocumentoInicialAction(traficoId: string, tipo: TipoDocumento, formData: FormData): Promise<Resultado> {
+  return ejecutar('subirDocumentoInicial', async () => {
+    const usuario = await requerirUsuario('documentos.revisar');
+    if (!Object.values(TipoDocumento).includes(tipo)) throw new ErrorNegocio('Tipo de documento no válido.');
+    const id = await servicio.documentoDeTipo(traficoId, tipo);
+    await servicio.subirDocumento(id, formData.get('file'), usuario);
+    refrescar(traficoId);
+    return undefined;
+  });
 }
 
 export async function revisarDocumentoAction(traficoId: string, documentoId: string, aprobar: boolean, motivo: string | null): Promise<Resultado> {

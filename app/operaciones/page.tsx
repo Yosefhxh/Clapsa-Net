@@ -1,14 +1,5 @@
-import { SinPermiso, usuarioConPermiso } from "@/shared/auth/paginas";
-import { BandejaOperaciones } from "@/features/operaciones/components/BandejaOperaciones";
-import { dalCatalogosOperacion, dalListarOperaciones, dalOpcionesClientes } from "@/features/operaciones/dal/operaciones-dal";
+import { OperacionesPagina } from "@/features/operaciones/components/OperacionesPagina";
 
-export default async function OperacionesPage() {
-  if (!(await usuarioConPermiso("operaciones.ver"))) return <SinPermiso />;
-  const [operaciones, opciones, catalogos] = await Promise.all([
-    dalListarOperaciones(),
-    dalOpcionesClientes(),
-    dalCatalogosOperacion(),
-  ]);
-
-  return <BandejaOperaciones operaciones={operaciones} opciones={opciones} aduanas={catalogos.aduanas} claves={catalogos.claves} />;
+export default function OperacionesPage({ searchParams }: { searchParams: Promise<{ nueva?: string; cliente?: string }> }) {
+  return <OperacionesPagina params={searchParams} />;
 }
