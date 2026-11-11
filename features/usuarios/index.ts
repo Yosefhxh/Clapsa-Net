@@ -6,6 +6,7 @@ export {
   cerrarSesionAction,
   obtenerUsuarios,
   eliminarUsuarioAction,
+  cambiarEstadoUsuario,
 } from "./actions/usuarios";
 
 export type { UsuarioFormData } from "./actions/usuarios";

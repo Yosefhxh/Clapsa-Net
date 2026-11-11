@@ -94,6 +94,8 @@ export async function gestionarUsuario(datos: UsuarioFormData, id?: number) {
       if (id === actual.id && estado !== EstadoUsuario.ACTIVO) {
         throw new ErrorNegocio('No puedes desactivar tu propio usuario.');
       }
+      const otro = await dalBuscarUsuarioPorCorreo(correo);
+      if (otro && otro.id !== id) throw new ErrorNegocio(`Ya existe otro usuario con el correo ${correo}.`);
 
       await dalActualizarUsuario(id, {
         nombre,
@@ -103,14 +105,38 @@ export async function gestionarUsuario(datos: UsuarioFormData, id?: number) {
         ...(passwordHash && { passwordHash }),
       });
       if (estado !== EstadoUsuario.ACTIVO || passwordHash) await cerrarSesionesDeUsuario(id);
-    } else {
-      await dalCrearUsuario({ nombre, correo, tipoUsuario: datos.tipoUsuario, estado, passwordHash: passwordHash! });
+      revalidatePath('/usuarios');
+      return { success: true, id };
     }
 
+    const otro = await dalBuscarUsuarioPorCorreo(correo);
+    if (otro) throw new ErrorNegocio(`Ya existe un usuario con el correo ${correo}.`);
+    const creado = await dalCrearUsuario({ nombre, correo, tipoUsuario: datos.tipoUsuario, estado, passwordHash: passwordHash! });
+    revalidatePath('/usuarios');
+    return { success: true, id: creado.id };
+  } catch (error) {
+    return { success: false, error: mensajeDeError(error, 'gestionarUsuario') };
+  }
+}
+
+/** Desactivar o reactivar: el usuario inactivo no puede iniciar sesión y se cierran sus sesiones. */
+export async function cambiarEstadoUsuario(id: number, activo: boolean) {
+  try {
+    const actual = await requerirUsuario('usuarios.gestionar');
+    const existente = await dalObtenerUsuarioPorId(id);
+    if (!existente) throw new ErrorNegocio('El usuario ya no existe.');
+    if (!activo) {
+      if (id === actual.id) throw new ErrorNegocio('No puedes desactivar tu propio usuario.');
+      if (existente.tipoUsuario === TipoUsuario.ADMIN && existente.estado === EstadoUsuario.ACTIVO && (await dalContarAdminsActivos()) <= 1) {
+        throw new ErrorNegocio('Debe quedar al menos un administrador activo.');
+      }
+    }
+    await dalActualizarUsuario(id, { estado: activo ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO });
+    if (!activo) await cerrarSesionesDeUsuario(id);
     revalidatePath('/usuarios');
     return { success: true };
   } catch (error) {
-    return { success: false, error: mensajeDeError(error, 'gestionarUsuario') };
+    return { success: false, error: mensajeDeError(error, 'cambiarEstadoUsuario') };
   }
 }
 

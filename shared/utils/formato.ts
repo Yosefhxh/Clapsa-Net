@@ -45,3 +45,19 @@ export function formatoDuracion(segundos: number | null | undefined): string {
   if (h < 48) return `${h} h ${min % 60} min`
   return `${Math.floor(h / 24)} d ${h % 24} h`
 }
+
+const diaMx = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: ZONA })
+
+/** Último acceso legible: "Hoy 9:12", "Ayer 18:03", "12/10/2026" o "Nunca". `ahora` llega del servidor para no desfasar. */
+export function formatoAcceso(fecha: Date | string | null | undefined, ahora: Date | string = new Date()): string {
+  if (!fecha) return 'Nunca'
+  const d = new Date(fecha), hoy = new Date(ahora)
+  const hora = d.toLocaleTimeString('es-MX', { timeZone: ZONA, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).replace(/^0(?=\d)/, '')
+  if (diaMx(d) === diaMx(hoy)) return `Hoy ${hora}`
+  if (diaMx(d) === diaMx(new Date(hoy.getTime() - 86_400_000))) return `Ayer ${hora}`
+  return formatoFecha(d)
+}
+
+/** Si la fecha cae hoy (hora de México). */
+export const esHoy = (fecha: Date | string | null | undefined, ahora: Date | string = new Date()) =>
+  !!fecha && diaMx(new Date(fecha)) === diaMx(new Date(ahora))
