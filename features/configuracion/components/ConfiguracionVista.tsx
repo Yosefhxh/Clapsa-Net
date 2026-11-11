@@ -201,7 +201,7 @@ export function ConfiguracionVista({ datos }: { datos: DatosConfiguracion }) {
     <>
       <div className="clp-page-head">
         <h1 className="clp-page-title">Configuración</h1>
-        <p className="clp-page-sub mt-0.5 text-sm">Datos de la agencia y reglas del despacho que usa todo el sistema.{editable ? "" : " Solo un administrador puede cambiarlas."}</p>
+        {editable ? null : <p className="clp-page-sub mt-0.5 text-sm">Solo un administrador puede cambiar la configuración.</p>}
       </div>
       <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
         <nav className="clp-card flex flex-col gap-0.5 p-2 lg:sticky lg:top-0" aria-label="Secciones de configuración">

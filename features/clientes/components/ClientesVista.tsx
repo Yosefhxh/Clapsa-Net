@@ -97,7 +97,6 @@ export function ClientesVista({ tipo, clientes, forwarders, hoy }: Props) {
       <div className="clp-page-head flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="clp-page-title">{titulo}</h1>
-          <p className="clp-page-sub mt-0.5 text-sm">{tipo === "DIRECTO" ? "Importadores y exportadores que contratan directamente." : "Intermediarios que contratan el servicio para sus clientes."}</p>
           <SectionTabs label="Clientes" tabs={CLIENTES_TABS} />
         </div>
         {puede("catalogos.editar") ? (

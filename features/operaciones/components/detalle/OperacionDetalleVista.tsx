@@ -38,7 +38,6 @@ export function OperacionDetalleVista({ operacion: op, opciones, claves, proveed
     <div className="space-y-1">
       <div className="clp-page-head">
         <h1 className="clp-page-title">Despacho Aduanal</h1>
-        <p className="clp-page-sub mt-0.5 text-sm">Seguimiento operativo del pedimento y avance por fase.</p>
       </div>
 
       <EncabezadoOperacion op={op} />

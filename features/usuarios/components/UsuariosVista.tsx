@@ -83,7 +83,6 @@ export function UsuariosVista({ usuarios }: { usuarios: UsuarioFila[] }) {
       <div className="clp-page-head flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="clp-page-title">Gestión de Usuarios</h1>
-          <p className="clp-page-sub mt-0.5 text-sm">Usuarios de Clapsa Net y lo que cada rol puede hacer.</p>
         </div>
         <button type="button" className="clp-btn clp-btn-primary" onClick={() => abrir("nuevo")}><Plus className="h-4 w-4" /> Nuevo usuario</button>
       </div>

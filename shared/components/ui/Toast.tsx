@@ -15,7 +15,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const avisar = useCallback((texto: string, tipo: TipoAviso = "ok") => {
     const id = ++siguiente.current;
-    setAvisos((a) => [...a, { id, texto, tipo }]);
+    // Como en la maqueta, el aviso nuevo reemplaza al anterior en lugar de apilarse.
+    setAvisos([{ id, texto, tipo }]);
     setTimeout(() => setAvisos((a) => a.filter((x) => x.id !== id)), tipo === "error" ? 6000 : 3500);
   }, []);
 

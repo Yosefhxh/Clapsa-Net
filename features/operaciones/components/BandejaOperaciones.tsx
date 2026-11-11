@@ -65,7 +65,6 @@ export function BandejaOperaciones({ operaciones, opciones, aduanas, claves }: P
       <div className="clp-page-head flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="clp-page-title">Operaciones</h1>
-          <p className="clp-page-sub mt-0.5 text-sm">Despachos de importación y exportación con su avance por fase.</p>
         </div>
         {puede("operaciones.operar") ? (
           <button type="button" className="clp-btn clp-btn-primary" onClick={() => setNueva(true)}>

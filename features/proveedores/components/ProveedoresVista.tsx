@@ -68,7 +68,6 @@ export function ProveedoresVista({ proveedores, pasos, aduanas }: Props) {
       <div className="clp-page-head flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="clp-page-title">Proveedores</h1>
-          <p className="clp-page-sub mt-0.5 text-sm">Empresas que CLAPSA contrata para cada etapa del despacho.</p>
         </div>
         {puede("catalogos.editar") ? (
           <button type="button" className="clp-btn clp-btn-primary" onClick={() => setRegistro({ abierto: true, editando: null })}>

@@ -8,7 +8,7 @@ export default function LoginPage() {
   const { form, errors, isSubmitting, updateField, submitLogin } = useLogin();
 
   return (
-    <div className="clp-marino flex min-h-screen items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
+    <div className="clp-login clp-marino flex min-h-screen items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
       <div className="grid w-full max-w-6xl items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:gap-10 lg:gap-24">
         <section className="flex max-w-[30rem] flex-col text-white">
           <BrandMark size="login" />
