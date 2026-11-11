@@ -12,7 +12,7 @@ export function BarraOperacion({ op, alProximo }: { op: OperacionDetalle; alProx
   return (
     <section className="clp-card clp-op-barra">
       <Link href="/operaciones" className="clp-rc-volver" title="Volver a Operaciones" aria-label="Volver a Operaciones"><ChevronLeft aria-hidden /></Link>
-      <div className="clp-ob-folio"><small>Operación</small><b className="clp-mono">{op.folio}</b></div>
+      <div className="clp-ob-folio"><small>Operación</small><h1 className="clp-mono">{op.folio}</h1></div>
       <div className="clp-ob-cli">
         <small>Cliente</small>
         <div>{op.cliente ? <>{op.cliente.razonSocial} <TipoClienteBadge tipo={op.cliente.tipo} /></> : <span className="clp-ob-tenue">Sin cliente asignado</span>}</div>

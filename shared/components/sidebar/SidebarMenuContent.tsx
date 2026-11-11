@@ -8,6 +8,7 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react";
+import { useSession } from "@/features/session";
 import { MenuItem } from "./MenuItem";
 
 interface MenuLink {
@@ -36,6 +37,12 @@ const MENU_CUENTA: MenuLink[] = [
 
 export function SidebarMenuContent() {
   const pathname = usePathname();
+  const { avisos } = useSession();
+  const n = (x: number, uno: string, varios: string) => `${x} ${x === 1 ? uno : varios}`;
+  const aviso = (id: string) =>
+    id === "clientes" && avisos?.encargosPorVencer ? { tono: "ambar" as const, texto: n(avisos.encargosPorVencer, "encargo por vencer", "encargos por vencer") }
+    : id === "operaciones" && avisos?.operacionesUrgentes ? { tono: "coral" as const, texto: n(avisos.operacionesUrgentes, "urgente", "urgentes") }
+    : null;
 
   const isActive = (match: string) =>
     match === "/" ? pathname === "/" : pathname === match || pathname.startsWith(`${match}/`);
@@ -47,6 +54,7 @@ export function SidebarMenuContent() {
       label={item.label}
       icon={item.icon}
       isActive={isActive(item.match)}
+      aviso={aviso(item.id)}
     />
   );
 
