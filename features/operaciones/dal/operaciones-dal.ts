@@ -248,9 +248,9 @@ export async function dalObtenerOperacion(id: string): Promise<OperacionDetalle 
 export async function dalOpcionesClientes(): Promise<OpcionCliente[]> {
   const clientes = await prisma.cliente.findMany({
     orderBy: { razonSocial: 'asc' },
-    select: { id: true, folio: true, razonSocial: true, rfc: true, tipo: true, clientePadreId: true, encargoConferido: true, fechaVigenciaEncargo: true, padronImportadores: true },
+    select: { id: true, folio: true, razonSocial: true, rfc: true, tipo: true, clientePadreId: true, encargoConferido: true, fechaVigenciaEncargo: true, padronImportadores: true, estado: true },
   });
-  return clientes.map((c) => ({ ...c, fechaVigenciaEncargo: iso(c.fechaVigenciaEncargo) }));
+  return clientes.map(({ estado, ...c }) => ({ ...c, activo: estado === 'ACTIVO', fechaVigenciaEncargo: iso(c.fechaVigenciaEncargo) }));
 }
 
 /** Catálogos para crear o editar operaciones. */

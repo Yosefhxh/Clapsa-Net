@@ -45,6 +45,21 @@ export async function generarFolio(prefijo: Prefijo, db: Cliente = prisma): Prom
   return `${prefijo}-${anio2}-${String(fila.ultimo).padStart(5, '0')}`
 }
 
+/**
+ * Folio que recibiría el siguiente registro, sin apartarlo (solo para mostrarlo en pantalla).
+ * El folio definitivo se asigna al guardar y puede cambiar si otra persona guarda antes.
+ */
+export async function verSiguienteFolio(prefijo: Prefijo, db: Cliente = prisma): Promise<string> {
+  const anio = new Date().getFullYear()
+  const anio2 = String(anio % 100).padStart(2, '0')
+  const [existente, consecutivo] = await Promise.all([
+    maximoExistente(db, prefijo, anio2),
+    db.consecutivo.findUnique({ where: { prefijo_anio: { prefijo, anio } }, select: { ultimo: true } }),
+  ])
+  const siguiente = Math.max(existente, consecutivo?.ultimo ?? 0) + 1
+  return `${prefijo}-${anio2}-${String(siguiente).padStart(5, '0')}`
+}
+
 export async function generarSiguienteFolio(tipo: 'DIRECTO' | 'FORWARDER') {
   return generarFolio(PREFIJO_FOLIO[tipo])
 }

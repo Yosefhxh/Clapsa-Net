@@ -160,6 +160,8 @@ export interface OpcionCliente {
   encargoConferido: boolean;
   fechaVigenciaEncargo: string | null;
   padronImportadores: boolean | null;
+  /** false = dado de baja: no se ofrece para nuevas asignaciones. */
+  activo: boolean;
 }
 
 export const ETIQUETA_MEDIO: Record<MedioTransporte, string> = {
