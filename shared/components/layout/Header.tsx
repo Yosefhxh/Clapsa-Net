@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { UserSessionBadge } from "@/features/session";
+import { PerfilCapsula } from "@/features/session";
 import { BrandMark } from "./BrandMark";
 
 interface HeaderProps {
@@ -29,7 +29,7 @@ export function Header({ className = "" }: HeaderProps) {
 
       {/* Zona derecha: Elementos funcionales de autenticación y gestión de sesión */}
       <div className="flex items-center gap-3">
-        <UserSessionBadge />
+        <PerfilCapsula />
       </div>
     </header>
   );

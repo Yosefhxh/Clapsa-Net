@@ -57,7 +57,7 @@ export function SidebarMenuContent() {
         <ul className="clp-capsula clp-capsula-principal flex max-md:shrink-0 max-md:gap-1" aria-label="Módulos">
           {MENU_PRINCIPAL.map(renderItem)}
         </ul>
-        <ul className="clp-capsula flex shrink-0 max-md:gap-1" aria-label="Cuenta">
+        <ul className="clp-capsula clp-capsula-cuenta flex shrink-0 max-md:gap-1" aria-label="Cuenta">
           {MENU_CUENTA.map(renderItem)}
         </ul>
       </div>

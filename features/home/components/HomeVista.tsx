@@ -10,7 +10,6 @@ import { useAhora } from "@/shared/hooks/useAhora";
 import { formatoFecha } from "@/shared/utils/formato";
 import type { OperacionResumen } from "@/features/operaciones/types/vistas";
 import { BarraAvance, PillSituacion, Semaforo, TipoClienteBadge, TipoOperacionTag } from "@/features/operaciones/components/etiquetas";
-import { LoginDateTimeDisplay } from "./LoginDateTimeDisplay";
 import { KpiWidget } from "./KpiWidget";
 import { PersonalizarWidgets } from "./PersonalizarWidgets";
 import { WIDGET, WIDGETS, type WidgetElegido } from "../widgets";
@@ -71,7 +70,6 @@ export function HomeVista({ operaciones, widgets, alertasActivas, encargosPorVen
       <div className="clp-page-head flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h1 className="clp-page-title">Control de Tráficos</h1>
-          <LoginDateTimeDisplay />
         </div>
         <div className="flex gap-2">
           <button type="button" className="clp-btn clp-btn-secondary" onClick={() => setPersonalizar(true)}><Settings2 className="h-4 w-4" /> Widgets</button>
