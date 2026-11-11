@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 import type { ReactNode } from "react";
-import { tienePermiso, type Permiso } from "@/shared/auth/permisos";
+import { usuarioPuede, type Permiso } from "@/shared/auth/permisos";
 import type { UsuarioSesion } from "@/shared/auth/session-types";
 
 interface SessionContextValue {
@@ -15,7 +15,7 @@ const SessionContext = createContext<SessionContextValue | undefined>(undefined)
 
 /** Recibe el usuario que el servidor validó con la cookie de sesión. */
 export function SessionProvider({ usuario, children }: { usuario: UsuarioSesion | null; children: ReactNode }) {
-  const puede = (permiso: Permiso) => (usuario ? tienePermiso(usuario.tipoUsuario, permiso) : false);
+  const puede = (permiso: Permiso) => (usuario ? usuarioPuede(usuario, permiso) : false);
 
   return <SessionContext.Provider value={{ user: usuario, puede }}>{children}</SessionContext.Provider>;
 }

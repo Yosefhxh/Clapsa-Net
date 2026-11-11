@@ -190,6 +190,10 @@ export async function dalObtenerOperacion(id: string): Promise<OperacionDetalle 
     fase,
     fases: [...FASES[tipo]],
     avance: avance(pasos),
+    proximoPaso: proximoPaso(
+      pasos.filter((p) => p.estado !== 'NO_APLICA').map((p) => ({ ...p, nombre: t.pasos.find((x) => x.paso.clave === p.clave)?.paso.nombre ?? p.clave })),
+      ctx,
+    ),
     documentosObligatoriosAprobados: docsOk,
     contenedores: t.contenedores.map((c) => ({ id: c.id, numero: c.numeroContenedor, tipo: c.tipoContenedor })),
     pasos: t.pasos

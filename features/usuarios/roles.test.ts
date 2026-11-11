@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { validarPasswordNueva } from '@/shared/auth/password'
+import { permisosPorDefecto } from '@/shared/auth/permisos'
 import { generarPassword, permisosDeRol, REGLAS_PASSWORD } from './roles'
 
 describe('roles de usuario', () => {
@@ -11,9 +12,10 @@ describe('roles de usuario', () => {
       expect(REGLAS_PASSWORD.every(([, f]) => f(p))).toBe(true)
     }
   })
-  it('los permisos salen de la tabla del servidor', () => {
-    expect(permisosDeRol('VIEWER')).toEqual(['Ver operaciones'])
-    expect(permisosDeRol('ADMIN')).toContain('Gestionar usuarios')
-    expect(permisosDeRol('EDITOR')).not.toContain('Gestionar usuarios')
+  it('los permisos salen de la matriz que resuelve el servidor', () => {
+    const matriz = { ADMIN: permisosPorDefecto('ADMIN'), EDITOR: permisosPorDefecto('EDITOR'), VIEWER: permisosPorDefecto('VIEWER') }
+    expect(permisosDeRol('VIEWER', matriz)).toEqual(['Ver operaciones'])
+    expect(permisosDeRol('ADMIN', matriz)).toContain('Administrar usuarios')
+    expect(permisosDeRol('EDITOR', { ...matriz, EDITOR: ['operaciones.ver', 'usuarios.gestionar'] })).toContain('Administrar usuarios')
   })
 })

@@ -5,7 +5,8 @@ import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { EstadoUsuario } from '@prisma/client'
 import prisma from '@/shared/lib/prisma'
-import { tienePermiso, type Permiso } from './permisos'
+import { obtenerMatrizPermisos } from './matriz'
+import { usuarioPuede, type Permiso } from './permisos'
 import type { UsuarioSesion } from './session-types'
 
 export const COOKIE_SESION = 'clapsa_sesion'
@@ -61,14 +62,15 @@ export const obtenerUsuarioActual = cache(async (): Promise<UsuarioSesion | null
   }
 
   const { id, nombre, correo, tipoUsuario } = sesion.usuario
-  return { id, nombre, correo, tipoUsuario, inicioSesion: sesion.createdAt.toISOString() }
+  const permisos = (await obtenerMatrizPermisos())[tipoUsuario]
+  return { id, nombre, correo, tipoUsuario, inicioSesion: sesion.createdAt.toISOString(), permisos }
 })
 
 /** Exige sesión y, si se indica, un permiso. Lanza ErrorAutorizacion si no se cumple. */
 export async function requerirUsuario(permiso?: Permiso): Promise<UsuarioSesion> {
   const usuario = await obtenerUsuarioActual()
   if (!usuario) throw new ErrorAutorizacion('Tu sesión terminó. Vuelve a iniciar sesión.')
-  if (permiso && !tienePermiso(usuario.tipoUsuario, permiso)) throw new ErrorAutorizacion()
+  if (permiso && !usuarioPuede(usuario, permiso)) throw new ErrorAutorizacion()
   return usuario
 }
 

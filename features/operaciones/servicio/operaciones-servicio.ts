@@ -14,7 +14,7 @@ import {
   type TipoDocumento,
 } from '@prisma/client';
 import prisma from '@/shared/lib/prisma';
-import { tienePermiso, type Permiso } from '@/shared/auth/permisos';
+import { usuarioPuede, type Permiso } from '@/shared/auth/permisos';
 import type { UsuarioSesion } from '@/shared/auth/session-types';
 import { ErrorAutorizacion } from '@/shared/auth/session';
 import { ErrorNegocio } from '@/shared/lib/resultado';
@@ -34,7 +34,7 @@ import { ETIQUETA_ESTADO_DOCUMENTO, ETIQUETA_ESTADO_PASO } from '../types/vistas
 type Tx = Prisma.TransactionClient;
 
 function exigir(usuario: UsuarioSesion, permiso: Permiso) {
-  if (!tienePermiso(usuario.tipoUsuario, permiso)) throw new ErrorAutorizacion();
+  if (!usuarioPuede(usuario, permiso)) throw new ErrorAutorizacion();
 }
 
 async function registrarEvento(

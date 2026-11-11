@@ -23,7 +23,12 @@ function suscribir(oyente: () => void) {
   };
 }
 
-/** Hora actual que se refresca cada minuto (para SLA y tiempos relativos). */
-export function useAhora(): number {
-  return useSyncExternalStore(suscribir, () => ahora, () => ahora);
+/**
+ * Hora actual que se refresca cada minuto (para SLA y tiempos relativos).
+ * En el servidor y durante la hidratación devuelve `inicial` (la hora de la petición, si la
+ * página la pasa) o 0; con 0, quien lo use debe mostrar un valor neutro. Así el HTML del
+ * servidor coincide con el del navegador.
+ */
+export function useAhora(inicial = 0): number {
+  return useSyncExternalStore(suscribir, () => ahora, () => inicial);
 }

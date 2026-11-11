@@ -7,9 +7,10 @@ import { Avatar } from "@/shared/components/ui/Avatar";
 import { useToast } from "@/shared/components/ui/Toast";
 import { PieRegistro, RegistroDividido, type EstadoBarra } from "@/shared/components/registro/RegistroDividido";
 import { gestionarUsuario } from "../actions/usuarios";
-import { generarPassword, permisosDeRol, REGLAS_PASSWORD, ROLES, type UsuarioFila } from "../roles";
+import { generarPassword, permisosDeRol, REGLAS_PASSWORD, ROLES, type MatrizPermisos, type UsuarioFila } from "../roles";
 
 interface Props {
+  matriz: MatrizPermisos;
   editando: UsuarioFila | null;
   /** Id del usuario con sesión: no puede desactivarse a sí mismo. */
   yo: number | null;
@@ -27,7 +28,7 @@ function formInicial(u: UsuarioFila | null) {
 type Form = ReturnType<typeof formInicial>;
 
 /** Registrar o editar usuario en vista dividida: rol a la izquierda, cuenta y contraseña a la derecha. */
-export function RegistroUsuario({ editando, yo, enfocarPassword, onVolver }: Props) {
+export function RegistroUsuario({ matriz, editando, yo, enfocarPassword, onVolver }: Props) {
   const avisar = useToast();
   const [guardando, iniciar] = useTransition();
   const [form, setForm] = useState(() => formInicial(editando));
@@ -119,7 +120,7 @@ export function RegistroUsuario({ editando, yo, enfocarPassword, onVolver }: Pro
           </div>
           <div className="clp-ru-puede">
             <div className="clp-ru-pt">Podrá hacer</div>
-            <ul key={form.tipoUsuario}>{permisosDeRol(form.tipoUsuario).map((t) => <li key={t}><Check aria-hidden />{t}</li>)}</ul>
+            <ul key={form.tipoUsuario}>{permisosDeRol(form.tipoUsuario, matriz).map((t) => <li key={t}><Check aria-hidden />{t}</li>)}</ul>
           </div>
         </div>
       )}

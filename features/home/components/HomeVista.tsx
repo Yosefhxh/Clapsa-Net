@@ -32,6 +32,8 @@ interface Props {
   ordenGuardado: OrdenHome;
   alertasActivas: string[];
   encargosPorVencer: { folio: string; razonSocial: string; vence: string }[];
+  /** Hora de la petición (ms): el servidor y la hidratación calculan con ella. */
+  ahoraServidor: number;
 }
 
 const COLOR: Record<Pendiente["tono"], string> = { riesgo: "#E0614F", alerta: "#E3A23B", info: "#3157C2" };
@@ -49,9 +51,9 @@ const folios = (ops: OperacionResumen[]) => ops.slice(0, 2).map((o) => o.folio).
 
 const nombreOrden = (grupo: GrupoOrden, id: string) => (grupo === "kpis" ? WIDGET(id)?.titulo ?? id : SECCION[id] ?? id);
 
-export function HomeVista({ operaciones, ordenGuardado, alertasActivas, encargosPorVencer }: Props) {
+export function HomeVista({ operaciones, ordenGuardado, alertasActivas, encargosPorVencer, ahoraServidor }: Props) {
   const router = useRouter();
-  const ahora = useAhora();
+  const ahora = useAhora(ahoraServidor);
   const { puede } = useSession();
   const [filtro, setFiltro] = useState<string | null>(null);
   const { orden, ordenando, estado, raiz, entrar, salir, restablecer, alPresionar, alTecla, item } = useOrdenHome(ordenGuardado, nombreOrden);

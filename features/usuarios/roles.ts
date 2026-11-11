@@ -1,5 +1,5 @@
 import type { TipoUsuario } from '@prisma/client'
-import { PERMISOS } from '@/shared/auth/permisos'
+import { PERMISOS, type Permiso } from '@/shared/auth/permisos'
 
 /** Usuario tal como llega a la pantalla (sin contraseña). */
 export interface UsuarioFila {
@@ -18,9 +18,12 @@ export const ROLES: Record<TipoUsuario, { nombre: string; corto: string; descrip
   VIEWER: { nombre: 'Consulta', corto: 'Consulta', descripcion: 'Solo puede ver la información.', tono: 'neutro' },
 }
 
-/** Lo que puede hacer un rol, tomado de la misma tabla de permisos que usa el servidor. */
-export function permisosDeRol(rol: TipoUsuario): string[] {
-  return Object.values(PERMISOS).filter((p) => (p.roles as readonly string[]).includes(rol)).map((p) => p.nombre)
+/** Permisos efectivos de cada rol, tal como los resuelve el servidor (con los ajustes de Configuración). */
+export type MatrizPermisos = Record<TipoUsuario, Permiso[]>
+
+/** Lo que puede hacer un rol, con los nombres legibles de cada permiso. */
+export function permisosDeRol(rol: TipoUsuario, matriz: MatrizPermisos): string[] {
+  return matriz[rol].map((p) => PERMISOS[p].nombre)
 }
 
 /** Mismas reglas que valida el servidor al guardar la contraseña. */

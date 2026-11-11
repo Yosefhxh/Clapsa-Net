@@ -143,6 +143,8 @@ export interface OperacionDetalle {
   fase: number;
   fases: string[];
   avance: Avance;
+  /** Lo siguiente que hay que hacer (misma regla que el tablero). */
+  proximoPaso: string;
   documentosObligatoriosAprobados: boolean;
   contenedores: { id: string; numero: string; tipo: string | null }[];
   pasos: PasoOperacion[];
