@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import prisma from '@/shared/lib/prisma'
 import * as servicio from '@/features/operaciones/servicio/operaciones-servicio'
 import { dalObtenerOperacion, dalListarOperaciones } from '@/features/operaciones/dal/operaciones-dal'
+import { dalProveedoresPorServicio } from '@/features/proveedores/dal/proveedores-dal'
 import type { UsuarioSesion } from '@/shared/auth/session-types'
 
 // Seguro: estas pruebas escriben en la BD; solo se permiten contra una base local.
@@ -109,6 +110,24 @@ describe('despacho de importación completo', () => {
     const nacional = await paso('FT_NACIONAL')
     await expect(servicio.asignarProveedorPaso(flete.id, transportistaId, null, editor)).rejects.toThrow(/no tiene registrado el servicio/)
     await expect(servicio.asignarProveedorPaso(nacional.id, transportistaId, null, editor)).rejects.toThrow(/no da servicio en Manzanillo/)
+    await servicio.asignarProveedorPaso(flete.id, navieraId, null, editor)
+    expect((await paso('FLETE_MARITIMO')).costo).toBe(42000)
+  })
+
+  it('un proveedor dado de baja no se ofrece ni se puede asignar; el ya asignado se conserva', async () => {
+    const flete = await paso('FLETE_MARITIMO')
+    await prisma.proveedores.update({ where: { id: navieraId }, data: { estado: 'INACTIVO' } })
+    try {
+      expect((await dalProveedoresPorServicio()).FLETE_MARITIMO?.some((p) => p.id === navieraId) ?? false).toBe(false)
+      // Ya estaba asignado: se puede ajustar su costo.
+      await servicio.asignarProveedorPaso(flete.id, navieraId, 40000, editor)
+      expect((await paso('FLETE_MARITIMO')).costo).toBe(40000)
+      // Si se quita, ya no se puede volver a asignar mientras esté inactivo.
+      await servicio.asignarProveedorPaso(flete.id, null, null, editor)
+      await expect(servicio.asignarProveedorPaso(flete.id, navieraId, null, editor)).rejects.toThrow(/dado de baja/)
+    } finally {
+      await prisma.proveedores.update({ where: { id: navieraId }, data: { estado: 'ACTIVO' } })
+    }
     await servicio.asignarProveedorPaso(flete.id, navieraId, null, editor)
     expect((await paso('FLETE_MARITIMO')).costo).toBe(42000)
   })
