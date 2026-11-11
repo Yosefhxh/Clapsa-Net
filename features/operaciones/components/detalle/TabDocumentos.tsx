@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, Eye, Loader2, Upload } from "lucide-react";
+import { Download, Eye, FileText, Loader2, Plus, Upload } from "lucide-react";
 import { useSession } from "@/features/session";
 import { Drawer } from "@/shared/components/ui/Drawer";
 import { useAccion } from "@/shared/hooks/useAccion";
@@ -37,6 +37,34 @@ function BotonSubir({ op, doc, etiqueta }: { op: OperacionDetalle; doc: Document
   );
 }
 
+/** Zona para soltar o elegir el PDF de un documento sin archivo. */
+function ZonaSubir({ op, doc }: { op: OperacionDetalle; doc: DocumentoExpediente }) {
+  const input = useRef<HTMLInputElement>(null);
+  const { pendiente, ejecutar } = useAccion();
+  const [encima, setEncima] = useState(false);
+  const subir = (file: File | undefined) => {
+    if (!file) return;
+    const fd = new FormData();
+    fd.set("file", file);
+    ejecutar(() => subirDocumentoAction(op.id, doc.id, fd));
+  };
+  return (
+    <button
+      type="button"
+      className={`clp-dc-drop ${encima ? "encima" : ""}`}
+      disabled={pendiente}
+      onClick={() => input.current?.click()}
+      onDragOver={(e) => { e.preventDefault(); setEncima(true); }}
+      onDragLeave={() => setEncima(false)}
+      onDrop={(e) => { e.preventDefault(); setEncima(false); subir(e.dataTransfer.files[0]); }}
+    >
+      <input ref={input} type="file" accept="application/pdf,.pdf" className="sr-only" tabIndex={-1} aria-label={`Archivo para ${doc.nombre}`} onChange={(e) => { subir(e.target.files?.[0]); e.target.value = ""; }} />
+      {pendiente ? <Loader2 className="animate-spin" aria-hidden /> : <Plus aria-hidden />}
+      <span><b>{pendiente ? "Subiendo…" : "Arrastra el PDF aquí o haz clic para subirlo"}</b><small>Solo PDF · máximo 5 MB</small></span>
+    </button>
+  );
+}
+
 export function TabDocumentos({ op }: { op: OperacionDetalle }) {
   const { puede } = useSession();
   const { pendiente, ejecutar } = useAccion();
@@ -52,52 +80,41 @@ export function TabDocumentos({ op }: { op: OperacionDetalle }) {
         <span className="clp-dt-titulo">Expediente</span>
         <span className="text-sm text-slate-500">{aprobados} de {op.documentos.length} aprobados · {obligatorios.length} obligatorios</span>
       </div>
-      <div className="clp-dt-scroll">
-        <table className="clp-dt-tabla">
-          <thead>
-            <tr><th>Documento</th><th>Fecha de subida</th><th>Quién lo subió</th><th>Estado</th><th className="text-right">Acciones</th></tr>
-          </thead>
-          <tbody>
-            {op.documentos.map((d) => (
-              <tr key={d.id}>
-                <td>
-                  <div className="font-semibold text-slate-800">
-                    {d.nombre}{" "}
-                    <span className={`ml-1 rounded px-1.5 py-0.5 text-[0.625rem] font-bold uppercase tracking-wide ${d.requisito === "OBLIGATORIO" ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-500"}`}>
-                      {d.requisito === "OBLIGATORIO" ? "Obligatorio" : "Si aplica"}
-                    </span>
-                  </div>
-                  {d.descripcion ? <div className="text-xs text-slate-500">{d.descripcion}</div> : null}
-                </td>
-                <td className="tabular-nums">{formatoFechaHora(d.subidoEn)}</td>
-                <td>{d.subidoPor ?? "-"}</td>
-                <td>
+      <div className="clp-docs-cards">
+        {op.documentos.map((d) => {
+          const tono = d.estado === "APROBADO" ? "ok" : d.estado === "RECHAZADO" ? "mal" : d.requisito === "OBLIGATORIO" ? "obligatorio" : "";
+          return (
+            <article key={d.id} className={`clp-dc ${tono}`}>
+              <div className="clp-dc-info">
+                <div className="clp-dc-nom">{d.nombre}<span className={`clp-dc-req ${d.requisito === "OBLIGATORIO" ? "obl" : ""}`}>{d.requisito === "OBLIGATORIO" ? "Obligatorio" : "Si aplica"}</span></div>
+                {d.descripcion ? <div className="clp-dc-desc">{d.descripcion}</div> : null}
+                <div className="clp-dc-meta">
                   <PillDocumento estado={d.estado} />
-                  {d.motivoRechazo ? <div className="mt-1 max-w-xs text-xs text-red-700">Motivo: {d.motivoRechazo}</div> : null}
-                  {d.revisadoPor ? <div className="mt-0.5 text-xs text-slate-500">Revisó: {d.revisadoPor}</div> : null}
-                </td>
-                <td>
-                  <div className="flex flex-wrap justify-end gap-1.5">
-                    {d.url ? (
-                      <a href={d.url} target="_blank" rel="noreferrer" className="clp-btn clp-btn-secondary clp-btn-sm">
-                        {d.estado === "APROBADO" ? <Download className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />} {d.estado === "APROBADO" ? "Descargar" : "Ver"}
-                      </a>
-                    ) : null}
+                  {d.subidoEn ? <span>Subió {d.subidoPor ?? "—"} · {formatoFechaHora(d.subidoEn)}</span> : null}
+                  {d.revisadoPor ? <span>Revisó {d.revisadoPor}</span> : null}
+                </div>
+                {d.motivoRechazo ? <div className="clp-dc-motivo">Motivo del rechazo: {d.motivoRechazo}</div> : null}
+              </div>
+              <div className="clp-dc-lado">
+                {d.url ? (
+                  <div className="clp-dc-archivo">
+                    <a href={d.url} target="_blank" rel="noreferrer" className="clp-dc-arch" title={d.nombreArchivo ?? d.nombre}>
+                      <FileText aria-hidden /><span>{d.nombreArchivo ?? d.nombre}</span>{d.estado === "APROBADO" ? <Download aria-hidden /> : <Eye aria-hidden />}
+                    </a>
                     {editable && d.estado === "POR_REVISAR" ? (
                       <>
                         <button type="button" className="clp-btn clp-btn-primary clp-btn-sm" disabled={pendiente} onClick={() => ejecutar(() => revisarDocumentoAction(op.id, d.id, true, null))}>Aprobar</button>
                         <button type="button" className="clp-btn clp-btn-secondary clp-btn-sm !text-red-700" disabled={pendiente} onClick={() => { setMotivo(""); setRechazando(d); }}>Rechazar</button>
                       </>
                     ) : null}
-                    {editable && d.estado === "PENDIENTE" ? <BotonSubir op={op} doc={d} etiqueta="Subir" /> : null}
                     {editable && d.estado === "RECHAZADO" ? <BotonSubir op={op} doc={d} etiqueta="Subir nueva versión" /> : null}
                     {editable && d.estado === "APROBADO" ? <BotonSubir op={op} doc={d} etiqueta="Reemplazar" /> : null}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                ) : editable ? <ZonaSubir op={op} doc={d} /> : <span className="clp-dc-sin">Sin archivo</span>}
+              </div>
+            </article>
+          );
+        })}
       </div>
       <p className="border-t border-linea px-4 py-2 text-xs text-slate-500">Solo PDF de hasta 5 MB. Aprobar o rechazar aparece cuando ya hay archivo.</p>
 

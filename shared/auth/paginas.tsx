@@ -3,7 +3,7 @@ import 'server-only'
 import { redirect } from 'next/navigation'
 import { ShieldAlert } from 'lucide-react'
 import { obtenerUsuarioActual } from './session'
-import { tienePermiso, type Permiso } from './permisos'
+import { usuarioPuede, type Permiso } from './permisos'
 import type { UsuarioSesion } from './session-types'
 
 /**
@@ -13,7 +13,7 @@ import type { UsuarioSesion } from './session-types'
 export async function usuarioConPermiso(permiso?: Permiso): Promise<UsuarioSesion | null> {
   const usuario = await obtenerUsuarioActual()
   if (!usuario) redirect('/api/sesion/salir')
-  if (permiso && !tienePermiso(usuario.tipoUsuario, permiso)) return null
+  if (permiso && !usuarioPuede(usuario, permiso)) return null
   return usuario
 }
 

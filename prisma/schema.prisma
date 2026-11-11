@@ -494,6 +494,17 @@ model DocumentoConfig {
   requisitoExpo RequisitoDocumento @default(SI_APLICA)
 }
 
+/// Permiso de un rol, editable en Configuración. El Administrador siempre tiene todos;
+/// si falta un renglón, se usa el valor por omisión del código (shared/auth/permisos.ts).
+model PermisoRol {
+  rol       TipoUsuario
+  permiso   String
+  permitido Boolean
+  updatedAt DateTime    @updatedAt
+
+  @@id([rol, permiso])
+}
+
 model AlertaConfig {
   clave       String  @id
   nombre      String

@@ -17,9 +17,9 @@ import { SelectorClienteImportador, ValidacionesImportador, encargoVigente } fro
 
 function Campo({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
   return (
-    <div className="clp-dato min-w-0">
-      <div className="text-xs text-slate-500">{etiqueta}</div>
-      <div className="truncate text-sm font-medium text-slate-800">{children}</div>
+    <div className="clp-cfg-campo min-w-0">
+      <small>{etiqueta}</small>
+      <span className="truncate">{children}</span>
     </div>
   );
 }
@@ -181,7 +181,6 @@ function Contenedores({ op }: { op: OperacionDetalle }) {
 }
 
 function PanelProximoPaso({ op }: { op: OperacionDetalle }) {
-  const siguiente = op.pasos.find((p) => (p.estado === "EN_PROCESO" || p.estado === "RECONOCIMIENTO" || p.estado === "PENDIENTE") && !p.bloqueo);
   const alertas = [
     !op.cliente ? "Sin cliente asignado." : null,
     !op.documentosObligatoriosAprobados ? "Hay documentos obligatorios sin aprobar." : null,
@@ -198,20 +197,18 @@ function PanelProximoPaso({ op }: { op: OperacionDetalle }) {
   ];
 
   return (
-    <aside className="clp-panel-azul space-y-3">
-      <div>
-        <div className="text-sm text-white/75">Próximo paso a dar</div>
-        <div className="text-xl font-semibold">{op.estado === "CERRADA" ? "Operación cerrada" : !op.cliente ? "Asignar cliente e importador" : !op.documentosObligatoriosAprobados ? "Aprobar documentos obligatorios" : siguiente?.nombre ?? "Revisar pasos bloqueados"}</div>
-      </div>
+    <aside className="clp-paso2">
+      <small>Próximo paso a dar</small>
+      <b>{op.proximoPaso}</b>
       {alertas.length ? (
-        <div className="space-y-2">
-          <div className="text-sm text-white/75">Alertas pendientes</div>
-          {alertas.map((a) => <div key={a} className="rounded-md bg-white/10 px-3 py-2 text-sm">{a}</div>)}
-        </div>
+        <>
+          <small>Alertas pendientes</small>
+          {alertas.map((a) => <span key={a} className="clp-paso2-alerta">{a}</span>)}
+        </>
       ) : null}
-      <div className="space-y-2 border-t border-white/15 pt-3">
-        <div className="text-sm text-white/75">Para poder hacer el pedimento</div>
-        {checks.map((c) => <div key={c.texto} className="clp-check"><i data-ok={c.ok}>{c.ok ? "✓" : ""}</i>{c.texto}</div>)}
+      <div className="clp-paso2-check">
+        <small>Para poder hacer el pedimento (fase 5)</small>
+        {checks.map((c) => <div key={c.texto} className="clp-check2"><i data-ok={c.ok}>{c.ok ? "✓" : ""}</i>{c.texto}</div>)}
       </div>
     </aside>
   );
@@ -219,19 +216,19 @@ function PanelProximoPaso({ op }: { op: OperacionDetalle }) {
 
 export function TabDetalles({ op, opciones, claves }: { op: OperacionDetalle; opciones: OpcionCliente[]; claves: ClavePedimento[] }) {
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
+    <div className="clp-det2">
       <section className="clp-card p-5">
         {op.estado === "EN_ESPERA_CLIENTE" ? (
-          <div className="clp-aviso-info mb-5">
-            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
-            <div className="text-sm text-slate-600">
+          <div className="clp-espera">
+            <Clock aria-hidden />
+            <div>
               <b>Operación en espera de cliente</b>
-              Puedes recibir y revisar documentos, clasificar y seguir el arribo. El pedimento y lo que sigue quedan bloqueados hasta asignar cliente e importador.
+              <span>Puedes recibir y revisar documentos, clasificar y seguir el arribo. El pedimento y lo que sigue quedan bloqueados hasta asignar cliente e importador.</span>
             </div>
           </div>
         ) : null}
         <h3 className="clp-section-title mb-3">Detalles del Embarque</h3>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="clp-campos4">
           <Campo etiqueta="Aduana">{op.aduana}</Campo>
           <Campo etiqueta="Tipo de operación">{op.tipo}</Campo>
           <Campo etiqueta="Medio de transporte">{ETIQUETA_MEDIO[op.medio]}</Campo>

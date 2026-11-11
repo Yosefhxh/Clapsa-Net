@@ -8,6 +8,7 @@ import * as servicio from '@/features/operaciones/servicio/operaciones-servicio'
 import { dalObtenerOperacion, dalListarOperaciones } from '@/features/operaciones/dal/operaciones-dal'
 import { dalProveedoresPorServicio } from '@/features/proveedores/dal/proveedores-dal'
 import type { UsuarioSesion } from '@/shared/auth/session-types'
+import { permisosPorDefecto } from '@/shared/auth/permisos'
 
 // Seguro: estas pruebas escriben en la BD; solo se permiten contra una base local.
 const host = new URL(process.env.DATABASE_URL ?? 'postgresql://x@sin-base/x').hostname
@@ -36,7 +37,7 @@ const pdf = (nombre: string) => new File([new Uint8Array([37, 80, 68, 70])], nom
 beforeAll(async () => {
   const crearUsuario = async (tipoUsuario: 'ADMIN' | 'EDITOR') => {
     const u = await prisma.usuario.create({ data: { nombre: `Prueba ${tipoUsuario}`, correo: `${tipoUsuario.toLowerCase()}${sufijo}@test.local`, passwordHash: 'x', tipoUsuario } })
-    return { id: u.id, nombre: u.nombre, correo: u.correo, tipoUsuario: u.tipoUsuario, inicioSesion: new Date().toISOString() }
+    return { id: u.id, nombre: u.nombre, correo: u.correo, tipoUsuario: u.tipoUsuario, inicioSesion: new Date().toISOString(), permisos: permisosPorDefecto(u.tipoUsuario) }
   }
   admin = await crearUsuario('ADMIN')
   editor = await crearUsuario('EDITOR')

@@ -50,6 +50,7 @@ async function HomeDatos() {
         ordenGuardado={orden}
         alertasActivas={alertas.map((a) => a.clave)}
         encargosPorVencer={encargos.map((e) => ({ folio: e.folio, razonSocial: e.razonSocial, vence: e.fechaVigenciaEncargo!.toISOString() }))}
+        ahoraServidor={new Date().getTime()}
       />
     </TrasEsqueleto>
   );

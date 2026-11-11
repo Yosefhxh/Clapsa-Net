@@ -1,10 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { HitoOperativo, RequisitoDocumento, TipoDocumento } from '@prisma/client';
+import { HitoOperativo, RequisitoDocumento, TipoDocumento, TipoUsuario } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '@/shared/lib/prisma';
-import { requerirUsuario } from '@/shared/auth/session';
+import { ErrorAutorizacion, requerirUsuario } from '@/shared/auth/session';
+import { esPermiso, PERMISOS, PERMISOS_BASE } from '@/shared/auth/permisos';
 import { ejecutar, ErrorNegocio, type Resultado } from '@/shared/lib/resultado';
 import { PASOS_ESENCIALES } from './reglas';
 
@@ -134,4 +135,27 @@ export async function activarAlertaAction(clave: string, activa: boolean): Promi
     refrescar();
     return undefined;
   }, activa ? 'Alerta activada.' : 'Alerta desactivada.');
+}
+
+/**
+ * Activa o quita un permiso a un rol. Solo un Administrador puede hacerlo (aunque otro rol tenga
+ * "Cambiar la configuración"), para que nadie se dé permisos a sí mismo. El Administrador no se edita.
+ */
+export async function guardarPermisoRolAction(rol: TipoUsuario, permiso: string, permitido: boolean): Promise<Resultado> {
+  return ejecutar('guardarPermisoRol', async () => {
+    const usuario = await requerirUsuario('configuracion.editar');
+    if (usuario.tipoUsuario !== TipoUsuario.ADMIN) throw new ErrorAutorizacion('Solo un administrador puede cambiar los permisos de los roles.');
+    if (!Object.values(TipoUsuario).includes(rol)) throw new ErrorNegocio('Rol no válido.');
+    if (rol === TipoUsuario.ADMIN) throw new ErrorNegocio('El administrador siempre conserva todos los permisos.');
+    if (!esPermiso(permiso)) throw new ErrorNegocio('Permiso no válido.');
+    if (PERMISOS_BASE.includes(permiso)) throw new ErrorNegocio('Este permiso es necesario para entrar al sistema y no se puede quitar.');
+    if (typeof permitido !== 'boolean') throw new ErrorNegocio('Valor no válido.');
+    await prisma.permisoRol.upsert({
+      where: { rol_permiso: { rol, permiso } },
+      update: { permitido },
+      create: { rol, permiso, permitido },
+    });
+    revalidatePath('/', 'layout');
+    return undefined;
+  }, `${permitido ? 'Permiso activado' : 'Permiso quitado'}: ${esPermiso(permiso) ? PERMISOS[permiso].nombre : permiso}.`);
 }

@@ -12,7 +12,7 @@ import { Pill } from "@/shared/components/ui/Pill";
 import { useAccion } from "@/shared/hooks/useAccion";
 import { esHoy, formatoAcceso, formatoFecha } from "@/shared/utils/formato";
 import { cambiarEstadoUsuario } from "../actions/usuarios";
-import { permisosDeRol, ROLES, type UsuarioFila } from "../roles";
+import { permisosDeRol, ROLES, type MatrizPermisos, type UsuarioFila } from "../roles";
 import { RegistroUsuario } from "./RegistroUsuario";
 
 export type { UsuarioFila };
@@ -33,7 +33,7 @@ type Modo =
   | { tipo: "saliendo"; editando: UsuarioFila | null; password: boolean }
   | { tipo: "registro"; editando: UsuarioFila | null; password: boolean; n: number };
 
-export function UsuariosVista({ usuarios, ahora }: { usuarios: UsuarioFila[]; ahora: string }) {
+export function UsuariosVista({ usuarios, ahora, matriz }: { usuarios: UsuarioFila[]; ahora: string; matriz: MatrizPermisos }) {
   const { user } = useSession();
   const yo = user?.id ?? null;
   const confirmar = useConfirmar();
@@ -115,7 +115,7 @@ export function UsuariosVista({ usuarios, ahora }: { usuarios: UsuarioFila[]; ah
           <section>
             <div className="clp-mm-t">Qué puede hacer</div>
             <ul className="clp-mm-ops">
-              {permisosDeRol(u.tipoUsuario).map((t) => <li key={t}><span>{t}</span><Pill tono="ok">Permitido</Pill></li>)}
+              {permisosDeRol(u.tipoUsuario, matriz).map((t) => <li key={t}><span>{t}</span><Pill tono="ok">Permitido</Pill></li>)}
             </ul>
           </section>
         </div>
@@ -181,7 +181,7 @@ export function UsuariosVista({ usuarios, ahora }: { usuarios: UsuarioFila[]; ah
       </Bloque>
       <Bloque titulo="Rol y permisos">
         <div className="clp-dt-fase"><PillRol u={u} /></div>
-        <ul className="clp-dt-lista check">{permisosDeRol(u.tipoUsuario).map((t) => <li key={t}><Check aria-hidden /><span>{t}</span></li>)}</ul>
+        <ul className="clp-dt-lista check">{permisosDeRol(u.tipoUsuario, matriz).map((t) => <li key={t}><Check aria-hidden /><span>{t}</span></li>)}</ul>
       </Bloque>
       <Bloque titulo="Acciones">
         <Dato etiqueta="Estado"><PillEstado u={u} /></Dato>
@@ -191,7 +191,7 @@ export function UsuariosVista({ usuarios, ahora }: { usuarios: UsuarioFila[]; ah
   );
 
   if (modo.tipo === "registro") {
-    return <RegistroUsuario key={`${modo.editando?.id ?? "nuevo"}-${modo.n}`} editando={modo.editando} yo={yo} enfocarPassword={modo.password} onVolver={volver} />;
+    return <RegistroUsuario key={`${modo.editando?.id ?? "nuevo"}-${modo.n}`} matriz={matriz} editando={modo.editando} yo={yo} enfocarPassword={modo.password} onVolver={volver} />;
   }
 
   return (
