@@ -56,15 +56,23 @@ async function registrarEvento(
  * - Cliente directo: el importador es el mismo cliente.
  * - Forwarder: el importador es obligatorio, debe ser un cliente directo y distinto del forwarder.
  */
-async function resolverClienteImportador(db: Tx | typeof prisma, clienteId: number, importadorId: number | null) {
+async function resolverClienteImportador(
+  db: Tx | typeof prisma,
+  clienteId: number,
+  importadorId: number | null,
+  actual: { clienteId: number | null; importadorId: number | null } = { clienteId: null, importadorId: null },
+) {
   const cliente = await db.cliente.findUnique({ where: { id: clienteId } });
   if (!cliente) throw new ErrorNegocio('El cliente ya no existe.');
+  // Un cliente dado de baja no se puede asignar de nuevo (sí se conserva donde ya estaba).
+  if (cliente.estado === 'INACTIVO' && cliente.id !== actual.clienteId) throw new ErrorNegocio(`${cliente.razonSocial} está inactivo. Reactívalo en Clientes para usarlo.`);
   if (cliente.tipo === TipoCliente.DIRECTO) return { cliente, importador: cliente };
 
   if (!importadorId) throw new ErrorNegocio('El cliente es forwarder: elige al importador que va en el pedimento.');
   if (importadorId === clienteId) throw new ErrorNegocio('El importador no puede ser el mismo forwarder.');
   const importador = await db.cliente.findUnique({ where: { id: importadorId } });
   if (!importador) throw new ErrorNegocio('El importador ya no existe.');
+  if (importador.estado === 'INACTIVO' && importador.id !== actual.importadorId) throw new ErrorNegocio(`${importador.razonSocial} está inactivo. Reactívalo en Clientes para usarlo.`);
   if (importador.tipo !== TipoCliente.DIRECTO) throw new ErrorNegocio('El importador debe ser un cliente directo.');
   return { cliente, importador };
 }
@@ -166,7 +174,7 @@ export async function asignarCliente(traficoId: string, clienteId: number, impor
     const pedimentoIniciado = await tx.traficoPaso.count({
       where: { traficoId, paso: { clave: 'DESPACHO_ADUANERO' }, estado: { in: [EstadoPaso.EN_PROCESO, EstadoPaso.COMPLETADO] } },
     });
-    const asignacion = await resolverClienteImportador(tx, clienteId, importadorId);
+    const asignacion = await resolverClienteImportador(tx, clienteId, importadorId, { clienteId: t.clienteId, importadorId: t.importadorId });
     // El importador va en el pedimento: una vez iniciado ya no puede cambiar.
     if (pedimentoIniciado && t.importadorId && asignacion.importador.id !== t.importadorId) {
       throw new ErrorNegocio('El pedimento ya se inició: no se puede cambiar el importador.');

@@ -99,6 +99,12 @@ enum MedioTransporte {
   FERROVIARIO
 }
 
+/// Estado de un registro de catálogo (clientes y proveedores).
+enum EstadoCatalogo {
+  ACTIVO
+  INACTIVO
+}
+
 enum Semaforo {
   VERDE
   ROJO
@@ -132,6 +138,10 @@ model Cliente {
   pdfEncargoUrl        String?
   /// null = sin verificar.
   padronImportadores   Boolean?
+  /// Inactivo = dado de baja: no aparece al crear operaciones; su historial se conserva.
+  estado               EstadoCatalogo @default(ACTIVO)
+  /// Constancia de situación fiscal (PDF) con la que se registró.
+  pdfConstanciaUrl     String?
   clientePadre         Cliente?    @relation("ClienteJerarquia", fields: [clientePadreId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   subclientes          Cliente[]   @relation("ClienteJerarquia")
   traficos             Trafico[]   @relation("ClienteTrafico")
@@ -139,6 +149,7 @@ model Cliente {
 
   @@index([tipo])
   @@index([clientePadreId])
+  @@index([estado])
 }
 
 model Proveedores {

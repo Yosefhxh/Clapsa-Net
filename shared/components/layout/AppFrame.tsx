@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "@/shared/components/sidebar/Sidebar";
 import { useSession } from "@/features/session";
 import { ToastProvider } from "@/shared/components/ui/Toast";
+import { ConfirmarProvider } from "@/shared/components/ui/Confirmar";
 import { Header } from "./Header";
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
@@ -22,6 +23,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastProvider>
+    <ConfirmarProvider>
     <div className="clp-marino flex h-screen flex-col overflow-hidden">
       <Header />
       {/* Desde tablet la pantalla clara contiene también el menú; en celular solo el contenido. */}
@@ -32,6 +34,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     </div>
+    </ConfirmarProvider>
     </ToastProvider>
   );
 }

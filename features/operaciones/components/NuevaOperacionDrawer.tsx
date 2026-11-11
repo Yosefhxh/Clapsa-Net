@@ -16,6 +16,8 @@ interface Props {
   opciones: OpcionCliente[];
   aduanas: { clave: string; nombre: string }[];
   claves: ClavePedimento[];
+  /** Cliente ya elegido (por ejemplo, al venir desde Clientes). */
+  clienteInicial?: number | null;
 }
 
 const INICIAL = {
@@ -33,10 +35,13 @@ const INICIAL = {
  * Fase 1 · Apertura del expediente. El cliente se puede dejar para después (cuando llegan
  * documentos antes de confirmar al importador), pero el pedimento queda bloqueado hasta asignarlo.
  */
-export function NuevaOperacionDrawer({ open, onClose, opciones, aduanas, claves }: Props) {
+export function NuevaOperacionDrawer({ open, onClose, opciones, aduanas, claves, clienteInicial }: Props) {
   const router = useRouter();
   const avisar = useToast();
-  const [form, setForm] = useState(INICIAL);
+  const [form, setForm] = useState(() => {
+    const c = opciones.find((o) => o.id === clienteInicial && o.activo);
+    return c ? { ...INICIAL, clienteId: c.id, importadorId: c.tipo === "DIRECTO" ? c.id : null } : INICIAL;
+  });
   const [error, setError] = useState("");
   const [guardando, iniciar] = useTransition();
   const importador = opciones.find((c) => c.id === form.importadorId);

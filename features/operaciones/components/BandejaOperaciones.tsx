@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { ClavePedimento } from "@prisma/client";
 import { DataTable, type Columna, type FiltroRapido } from "@/shared/components/ui/DataTable";
@@ -22,7 +22,14 @@ interface Props {
 export function BandejaOperaciones({ operaciones, opciones, aduanas, claves }: Props) {
   const router = useRouter();
   const { puede } = useSession();
-  const [nueva, setNueva] = useState(false);
+  const params = useSearchParams();
+  // Desde Clientes se llega con ?nueva=1&cliente=ID para abrir la operación con el cliente ya elegido.
+  const [nueva, setNueva] = useState(() => params.get("nueva") === "1");
+  const [clienteInicial] = useState(() => Number(params.get("cliente")) || null);
+  const cerrarNueva = () => {
+    setNueva(false);
+    if (params.get("nueva")) router.replace("/operaciones", { scroll: false });
+  };
 
   const columnas = useMemo<Columna<OperacionResumen>[]>(() => [
     {
@@ -87,7 +94,7 @@ export function BandejaOperaciones({ operaciones, opciones, aduanas, claves }: P
         vacio={operaciones.length === 0 ? "Aún no hay operaciones. Crea la primera con “Nueva operación”." : undefined}
       />
 
-      <NuevaOperacionDrawer open={nueva} onClose={() => setNueva(false)} opciones={opciones} aduanas={aduanas} claves={claves} />
+      {nueva ? <NuevaOperacionDrawer open onClose={cerrarNueva} opciones={opciones} aduanas={aduanas} claves={claves} clienteInicial={clienteInicial} /> : null}
     </>
   );
 }

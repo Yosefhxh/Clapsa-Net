@@ -9,19 +9,18 @@ type PdfTextItem = {
   hasEOL?: boolean
 }
 
-export async function extractPdfData(file: File): Promise<ExtractedPdfData> {
+/** Lee el texto de todas las páginas del PDF. */
+async function abrirPdf(file: File) {
   if (typeof window === 'undefined') {
     throw new Error('PDF extraction only available in browser')
   }
-
   const pdfjsLib = await import('pdfjs-dist')
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js'
+  return pdfjsLib.getDocument(await file.arrayBuffer()).promise
+}
 
-  const arrayBuffer = await file.arrayBuffer()
-  const pdf = await pdfjsLib.getDocument(arrayBuffer).promise
-
+async function textoDe(pdf: Awaited<ReturnType<typeof abrirPdf>>) {
   let fullText = ''
-
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i)
     const textContent = await page.getTextContent()
@@ -30,11 +29,40 @@ export async function extractPdfData(file: File): Promise<ExtractedPdfData> {
       .filter((item) => typeof item.str === 'string')
       .map((item) => `${item.str ?? ''}${item.hasEOL ? '\n' : ' '}`)
       .join('')
-
     fullText += text + '\n'
   }
+  return fullText
+}
 
-  return parseConstanciaFiscal(fullText)
+export async function extractPdfData(file: File): Promise<ExtractedPdfData> {
+  return parseConstanciaFiscal(await textoDe(await abrirPdf(file)))
+}
+
+/**
+ * Lee la constancia y genera una miniatura nítida de la primera página
+ * (ancho real según la densidad de la pantalla, para la vista ampliada).
+ */
+export async function leerConstancia(file: File): Promise<{ datos: ExtractedPdfData; miniatura: string | null }> {
+  const pdf = await abrirPdf(file)
+  const datos = parseConstanciaFiscal(await textoDe(pdf))
+  let miniatura: string | null = null
+  try {
+    const pagina = await pdf.getPage(1)
+    const base = pagina.getViewport({ scale: 1 })
+    const ancho = Math.min(1600, Math.max(1100, Math.round(640 * (window.devicePixelRatio || 1))))
+    const vista = pagina.getViewport({ scale: ancho / base.width })
+    const lienzo = document.createElement('canvas')
+    lienzo.width = vista.width
+    lienzo.height = vista.height
+    const ctx = lienzo.getContext('2d')!
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, lienzo.width, lienzo.height)
+    await pagina.render({ canvasContext: ctx, viewport: vista, canvas: lienzo }).promise
+    miniatura = lienzo.toDataURL('image/png')
+  } catch {
+    // Sin miniatura: se muestra el documento genérico.
+  }
+  return { datos, miniatura }
 }
 
 function parseConstanciaFiscal(text: string): ExtractedPdfData {

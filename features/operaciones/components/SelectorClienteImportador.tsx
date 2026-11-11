@@ -49,8 +49,10 @@ export function SelectorClienteImportador({ opciones, clienteId, importadorId, o
   const idCliente = useId();
   const idImportador = useId();
   const cliente = opciones.find((c) => c.id === clienteId) ?? null;
-  const directos = opciones.filter((c) => c.tipo === "DIRECTO");
-  const forwarders = opciones.filter((c) => c.tipo === "FORWARDER");
+  // Los clientes inactivos no se ofrecen, salvo el que la operación ya tiene asignado.
+  const disponibles = opciones.filter((c) => c.activo || c.id === clienteId || c.id === importadorId);
+  const directos = disponibles.filter((c) => c.tipo === "DIRECTO");
+  const forwarders = disponibles.filter((c) => c.tipo === "FORWARDER");
   const subclientes = cliente?.tipo === "FORWARDER" ? directos.filter((c) => c.clientePadreId === cliente.id) : [];
   const otrosDirectos = directos.filter((c) => !subclientes.includes(c));
 
