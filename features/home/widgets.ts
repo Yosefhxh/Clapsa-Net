@@ -5,12 +5,12 @@ export type TonoWidget = 'azul' | 'verde' | 'ambar' | 'rojo' | 'morado' | 'gris'
 export type IconoWidget = 'caja' | 'alerta' | 'documento' | 'camion' | 'reloj' | 'check' | 'usuario' | 'barco' | 'dinero';
 
 export const TONOS: Record<TonoWidget, { color: string; nombre: string }> = {
-  rojo: { color: '#dc2626', nombre: 'Urgente' },
-  ambar: { color: '#d97706', nombre: 'Por atender' },
-  azul: { color: '#1d4ed8', nombre: 'En proceso' },
-  verde: { color: '#16a34a', nombre: 'Terminado' },
-  morado: { color: '#7a4bd6', nombre: 'Cobranza' },
-  gris: { color: '#64748b', nombre: 'Informativo' },
+  rojo: { color: '#E0614F', nombre: 'Urgente' },
+  ambar: { color: '#E3A23B', nombre: 'Por atender' },
+  azul: { color: '#5B86E5', nombre: 'En proceso' },
+  verde: { color: '#2E9E7A', nombre: 'Terminado' },
+  morado: { color: '#8C7BD8', nombre: 'Cobranza' },
+  gris: { color: '#A2AABD', nombre: 'Informativo' },
 };
 
 export interface DefinicionWidget {
@@ -63,6 +63,27 @@ export const WIDGETS: DefinicionWidget[] = [
 ];
 
 export const WIDGET = (id: string) => WIDGETS.find((w) => w.id === id);
+
+/** Texto corto bajo el número de cada widget del Home (siempre con datos reales). */
+export function notaWidget(id: string, operaciones: OperacionResumen[], ahora: number): string {
+  const abiertas = operaciones.filter(abierta);
+  switch (id) {
+    case 'por_despachar': {
+      const semana = abiertas.filter((o) => !liberada(o) && (() => { const t = eta(o); return t != null && t >= ahora && t - ahora <= 7 * 86_400_000; })()).length;
+      return semana ? `${semana} ${semana === 1 ? 'llega' : 'llegan'} esta semana` : 'Sin arribos esta semana';
+    }
+    case 'reconocimiento': return 'Semáforo rojo';
+    case 'por_pagar': return 'Validados sin pago';
+    case 'trafico_activo': {
+      const porAduana = new Map<string, number>();
+      abiertas.forEach((o) => porAduana.set(o.aduana, (porAduana.get(o.aduana) ?? 0) + 1));
+      return [...porAduana].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([a, n]) => `${a} ${n}`).join(' · ') || 'Sin operaciones abiertas';
+    }
+    case 'proximo_llegar': return 'ETA en 48 h';
+    case 'desaduanadas': return 'Liberadas sin cerrar';
+    default: return WIDGET(id)?.descripcion ?? '';
+  }
+}
 
 export const MAX_WIDGETS = 6;
 

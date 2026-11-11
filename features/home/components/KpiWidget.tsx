@@ -1,51 +1,43 @@
-import { AlertTriangle, Banknote, CheckCircle2, Clock, FileText, Package, Ship, Truck, UserRound, type LucideIcon } from "lucide-react";
-import { TONOS, type DefinicionWidget, type IconoWidget, type WidgetElegido } from "../widgets";
+import { Clock, Eye, FileText, Package, TriangleAlert, Truck, type LucideIcon } from "lucide-react";
+import { TONOS, type DefinicionWidget } from "../widgets";
 
-const ICONOS: Record<IconoWidget, LucideIcon> = {
-  caja: Package,
-  alerta: AlertTriangle,
-  documento: FileText,
-  camion: Truck,
-  reloj: Clock,
-  check: CheckCircle2,
-  usuario: UserRound,
-  barco: Ship,
-  dinero: Banknote,
+/** Ícono de cada widget del Home, como en el diseño aprobado. */
+const ICONOS: Record<string, LucideIcon> = {
+  por_despachar: Package,
+  reconocimiento: TriangleAlert,
+  por_pagar: FileText,
+  trafico_activo: Truck,
+  proximo_llegar: Clock,
+  desaduanadas: Eye,
 };
 
-interface Props {
+interface Props extends Omit<React.ComponentPropsWithoutRef<"button">, "onClick"> {
   definicion: DefinicionWidget;
-  eleccion: WidgetElegido;
   valor: number;
-  activo?: boolean;
-  onClick?: () => void;
-  compacto?: boolean;
+  nota: string;
+  activo: boolean;
+  onClick: () => void;
 }
 
-/** Indicador del Home: color por significado, número y aviso si pasa del límite. */
-export function KpiWidget({ definicion, eleccion, valor, activo, onClick, compacto }: Props) {
-  const Icono = ICONOS[definicion.icono];
-  const alto = eleccion.umbral != null && valor > eleccion.umbral;
-  const Etiqueta = onClick ? "button" : "div";
-
+/** Widget del Home: título con ícono, número y nota. Al picarlo filtra "Requieren atención". */
+export function KpiWidget({ definicion, valor, nota, activo, onClick, ...resto }: Props) {
+  const Icono = ICONOS[definicion.id] ?? Package;
   return (
-    <Etiqueta
-      type={onClick ? "button" : undefined}
+    <button
+      {...resto}
+      type="button"
       onClick={onClick}
-      aria-pressed={onClick ? activo : undefined}
-      title={onClick ? `${definicion.descripcion} Pica para filtrar la tabla.` : definicion.descripcion}
-      className={`clp-kpi ${alto ? "clp-kpi-alto" : ""} ${compacto ? "clp-kpi-compacto" : ""}`}
-      style={{ "--c": TONOS[eleccion.tono].color } as React.CSSProperties}
+      aria-pressed={activo}
+      title={`${definicion.descripcion} Pica para filtrar Requieren atención.`}
+      className="clp-kpi"
+      style={{ "--c": TONOS[definicion.tono].color } as React.CSSProperties}
     >
       <span className="clp-kpi-top">
-        <span className="truncate">{definicion.titulo}</span>
-        <Icono className="h-4 w-4 shrink-0" style={{ color: TONOS[eleccion.tono].color }} aria-hidden />
+        {definicion.titulo}
+        <Icono aria-hidden />
       </span>
-      <b className="clp-kpi-valor">
-        {valor}
-        {alto ? <em>Revisar</em> : null}
-      </b>
-      <small className="clp-kpi-desc">{definicion.descripcion}</small>
-    </Etiqueta>
+      <b className="clp-kpi-valor">{valor}</b>
+      <small className="clp-kpi-nota">{nota}</small>
+    </button>
   );
 }

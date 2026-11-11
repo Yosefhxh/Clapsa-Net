@@ -5,34 +5,52 @@ import { z } from 'zod';
 import prisma from '@/shared/lib/prisma';
 import { requerirUsuario } from '@/shared/auth/session';
 import { ejecutar, ErrorNegocio, type Resultado } from '@/shared/lib/resultado';
-import { MAX_WIDGETS, TONOS, WIDGETS, type TonoWidget } from './widgets';
+import { WIDGET } from './widgets';
+import { PREFERENCIA_SECCIONES, SECCIONES_AVISOS, SECCIONES_GRID, TABLERO_HOME } from './orden';
 
-const esquema = z
-  .array(
-    z.object({
-      widget: z.string().refine((id) => WIDGETS.some((w) => w.id === id), 'Widget no válido.'),
-      tono: z.string().refine((t): t is TonoWidget => t in TONOS, 'Color no válido.'),
-      umbral: z.number().int().min(0).max(100000).nullable(),
-    }),
-  )
-  .max(MAX_WIDGETS, `Elige como máximo ${MAX_WIDGETS} widgets.`);
+/** Una permutación exacta de la lista base (mismos elementos, sin repetir). */
+const permutacion = (base: readonly string[]) =>
+  z.array(z.string()).refine((l) => l.length === base.length && new Set(l).size === l.length && l.every((x) => base.includes(x)), 'Orden no válido.');
 
-/** Guarda el tablero del usuario actual (solo afecta su propia vista). */
-export async function guardarWidgetsAction(lista: z.input<typeof esquema>): Promise<Resultado> {
-  return ejecutar('guardarWidgets', async () => {
+const esquema = z.object({
+  kpis: permutacion(TABLERO_HOME),
+  grid: permutacion(SECCIONES_GRID),
+  avisos: permutacion(SECCIONES_AVISOS),
+});
+
+/** Guarda el acomodo del Home del usuario actual (solo afecta su propia vista). */
+export async function guardarOrdenHomeAction(orden: z.input<typeof esquema>): Promise<Resultado> {
+  return ejecutar('guardarOrdenHome', async () => {
     const usuario = await requerirUsuario();
-    const r = esquema.safeParse(lista);
-    if (!r.success) throw new ErrorNegocio(r.error.issues[0]?.message ?? 'Revisa los widgets.');
-    if (new Set(r.data.map((w) => w.widget)).size !== r.data.length) throw new ErrorNegocio('Hay widgets repetidos.');
+    const r = esquema.safeParse(orden);
+    if (!r.success) throw new ErrorNegocio(r.error.issues[0]?.message ?? 'Revisa el orden.');
+    const { kpis, grid, avisos } = r.data;
 
     await prisma.$transaction([
       prisma.widgetUsuario.deleteMany({ where: { usuarioId: usuario.id } }),
       prisma.widgetUsuario.createMany({
-        data: r.data.map((w, orden) => ({ usuarioId: usuario.id, widget: w.widget, tono: w.tono, umbral: w.umbral, orden })),
+        data: kpis.map((widget, orden) => ({ usuarioId: usuario.id, widget, orden, tono: WIDGET(widget)!.tono, umbral: null })),
+      }),
+      prisma.preferenciaUsuario.upsert({
+        where: { usuarioId_clave: { usuarioId: usuario.id, clave: PREFERENCIA_SECCIONES } },
+        create: { usuarioId: usuario.id, clave: PREFERENCIA_SECCIONES, valor: { grid, avisos } },
+        update: { valor: { grid, avisos } },
       }),
     ]);
     revalidatePath('/');
     return undefined;
-  }, 'Tablero guardado.');
+  });
 }
 
+/** Regresa el Home del usuario actual al acomodo original. */
+export async function restablecerOrdenHomeAction(): Promise<Resultado> {
+  return ejecutar('restablecerOrdenHome', async () => {
+    const usuario = await requerirUsuario();
+    await prisma.$transaction([
+      prisma.widgetUsuario.deleteMany({ where: { usuarioId: usuario.id } }),
+      prisma.preferenciaUsuario.deleteMany({ where: { usuarioId: usuario.id, clave: PREFERENCIA_SECCIONES } }),
+    ]);
+    revalidatePath('/');
+    return undefined;
+  });
+}
