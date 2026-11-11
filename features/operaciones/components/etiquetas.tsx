@@ -39,14 +39,9 @@ export function PillDocumento({ estado }: { estado: EstadoDocumento }) {
 }
 
 export function Semaforo({ valor }: { valor: ValorSemaforo | null }) {
-  const color = valor === "VERDE" ? "#16a34a" : valor === "ROJO" ? "#dc2626" : "#cbd5e1";
-  const texto = valor === "VERDE" ? "Verde" : valor === "ROJO" ? "Rojo" : "Sin modular";
-  return (
-    <span className="inline-flex items-center gap-1.5 text-sm">
-      <i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: color }} aria-hidden />
-      {texto}
-    </span>
-  );
+  if (valor === "ROJO") return <Pill tono="riesgo">Rojo</Pill>;
+  if (valor === "VERDE") return <Pill tono="ok">Verde</Pill>;
+  return <Pill tono="neutro">Pendiente</Pill>;
 }
 
 export function TipoClienteBadge({ tipo }: { tipo: TipoCliente }) {

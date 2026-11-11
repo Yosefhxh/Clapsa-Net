@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowDownUp, ArrowUp, ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronUp, Download, Search } from "lucide-react";
 
 export interface Columna<T> {
   id: string;
@@ -41,6 +41,9 @@ interface DataTableProps<T> {
   alPicarFila?: (fila: T) => void;
   /** Filtro aplicado desde fuera (por ejemplo, un widget del Home). */
   filtroExterno?: ((fila: T) => boolean) | null;
+  /** Orden por omisión mientras no se ordena por una columna. */
+  prioridad?: (a: T, b: T) => number;
+  className?: string;
 }
 
 const comparar = (a: string | number | null, b: string | number | null) => {
@@ -65,7 +68,7 @@ function descargarCsv<T>(nombre: string, columnas: Columna<T>[], filas: T[]) {
 /** Tabla con búsqueda, filtros con conteo, orden, selección, paginación y exportar a CSV. */
 export function DataTable<T>({
   filas, columnas, idFila, textoBusqueda, placeholderBusqueda, nombreRegistros, filtros = [], ordenInicial,
-  porPagina = 25, seleccionable, accionesLote, exportarComo, titulo, extraToolbar, vacio, alPicarFila, filtroExterno,
+  porPagina = 25, seleccionable, accionesLote, exportarComo, titulo, extraToolbar, vacio, alPicarFila, filtroExterno, prioridad, className,
 }: DataTableProps<T>) {
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState<string | null>(null);
@@ -78,12 +81,13 @@ export function DataTable<T>({
     const f = filtros.find((x) => x.id === filtro);
     let res = filas.filter((fila) => (!q || textoBusqueda(fila).toLowerCase().includes(q)) && (!f || f.cumple(fila)) && (!filtroExterno || filtroExterno(fila)));
     const col = orden && columnas.find((c) => c.id === orden.columna);
+    if (!col && prioridad) res = [...res].sort(prioridad);
     if (col?.orden) {
       const m = orden!.dir === "asc" ? 1 : -1;
       res = [...res].sort((a, b) => comparar(col.orden!(a), col.orden!(b)) * m);
     }
     return res;
-  }, [filas, busqueda, filtro, filtros, orden, columnas, textoBusqueda, filtroExterno]);
+  }, [filas, busqueda, filtro, filtros, orden, columnas, textoBusqueda, filtroExterno, prioridad]);
 
   const totalPaginas = Math.max(1, Math.ceil(visibles.length / porPagina));
   const paginaActual = Math.min(pagina, totalPaginas - 1);
@@ -110,7 +114,7 @@ export function DataTable<T>({
   const nCols = columnas.length + (seleccionable ? 1 : 0);
 
   return (
-    <div className="clp-card clp-dt">
+    <div className={`clp-card clp-dt ${className ?? ""}`}>
       <div className="clp-dt-toolbar">
         {titulo ? <div className="clp-dt-titulo">{titulo}</div> : null}
         <label className="clp-dt-buscar">
@@ -169,11 +173,7 @@ export function DataTable<T>({
                   {c.orden ? (
                     <button type="button" className="clp-dt-orden" data-activo={orden?.columna === c.id} onClick={() => alternarOrden(c.id)}>
                       {c.encabezado}
-                      {orden?.columna === c.id ? (
-                        <ArrowUp className={`h-3 w-3 ${orden.dir === "desc" ? "rotate-180" : ""}`} aria-hidden />
-                      ) : (
-                        <ArrowDownUp className="h-3 w-3 opacity-40" aria-hidden />
-                      )}
+                      <ChevronUp className={orden?.columna === c.id && orden.dir === "desc" ? "rotate-180" : ""} aria-hidden />
                     </button>
                   ) : (
                     c.encabezado
@@ -210,13 +210,15 @@ export function DataTable<T>({
       </div>
 
       <div className="clp-dt-pie">
-        <span>Mostrando {visibles.length === 0 ? 0 : paginaActual * porPagina + 1}–{paginaActual * porPagina + enPagina.length} de {visibles.length} {nombreRegistros}</span>
+        <span>{visibles.length ? `Mostrando ${paginaActual * porPagina + 1}–${paginaActual * porPagina + enPagina.length} de ${visibles.length} ${nombreRegistros}` : `0 ${nombreRegistros}`}</span>
         {totalPaginas > 1 ? (
-          <span className="flex items-center gap-1">
-            <button type="button" className="clp-icon-btn" disabled={paginaActual === 0} onClick={() => setPagina(paginaActual - 1)} aria-label="Página anterior"><ChevronLeft className="h-4 w-4" /></button>
-            <span className="px-2 tabular-nums">{paginaActual + 1} / {totalPaginas}</span>
-            <button type="button" className="clp-icon-btn" disabled={paginaActual >= totalPaginas - 1} onClick={() => setPagina(paginaActual + 1)} aria-label="Página siguiente"><ChevronRight className="h-4 w-4" /></button>
-          </span>
+          <nav className="clp-dt-pag" aria-label="Paginación">
+            <button type="button" className="clp-dt-pag-ib" disabled={paginaActual === 0} onClick={() => setPagina(paginaActual - 1)} aria-label="Página anterior"><ChevronLeft /></button>
+            {Array.from({ length: totalPaginas }, (_, i) => (
+              <button key={i} type="button" className="clp-dt-pag-n" aria-current={i === paginaActual ? "page" : undefined} onClick={() => setPagina(i)}>{i + 1}</button>
+            ))}
+            <button type="button" className="clp-dt-pag-ib" disabled={paginaActual >= totalPaginas - 1} onClick={() => setPagina(paginaActual + 1)} aria-label="Página siguiente"><ChevronRight /></button>
+          </nav>
         ) : null}
       </div>
     </div>

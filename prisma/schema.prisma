@@ -187,6 +187,7 @@ model Usuario {
   sesiones             Sesion[]
   eventos              EventoOperacion[]
   widgets              WidgetUsuario[]
+  preferencias         PreferenciaUsuario[]
   traficosEjecutivo    Trafico[]            @relation("EjecutivoTrafico")
   pasosResponsable     TraficoPaso[]        @relation("ResponsablePaso")
   documentosSubidos    DocumentoOperacion[] @relation("DocumentoSubidoPor")
@@ -485,6 +486,18 @@ model AlertaConfig {
 }
 
 /// Widgets que cada usuario eligió para su Home.
+/// Preferencias de vista por usuario (por ejemplo, el orden de las secciones del Home).
+model PreferenciaUsuario {
+  usuarioId Int
+  clave     String
+  valor     Json
+  updatedAt DateTime @updatedAt
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([usuarioId, clave])
+}
+
 model WidgetUsuario {
   id        Int     @id @default(autoincrement())
   usuarioId Int
