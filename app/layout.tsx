@@ -4,6 +4,7 @@ import "./globals.css";
 import { SessionProvider } from "@/features/session";
 import { AppFrame } from "@/shared/components/layout/AppFrame";
 import { obtenerUsuarioActual } from "@/shared/auth/session";
+import { obtenerAvisosMenu } from "@/shared/lib/avisos-menu";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 // Plus Jakarta Sans solo en el inicio de sesión (igual que en producción).
@@ -20,11 +21,12 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const usuario = await obtenerUsuarioActual();
+  const avisos = usuario ? await obtenerAvisosMenu() : null;
 
   return (
     <html lang="es" className={`${inter.variable} ${jakarta.variable}`}>
       <body className="bg-lienzo font-sans">
-        <SessionProvider usuario={usuario}>
+        <SessionProvider usuario={usuario} avisos={avisos}>
           <AppFrame>{children}</AppFrame>
         </SessionProvider>
       </body>
