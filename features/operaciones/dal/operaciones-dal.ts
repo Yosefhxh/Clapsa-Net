@@ -2,6 +2,7 @@ import 'server-only';
 
 import { Prisma, RequisitoDocumento, type EstadoPaso, type HitoOperativo, type TipoOperacion } from '@prisma/client';
 import prisma from '@/shared/lib/prisma';
+import { PREFIJO_FOLIO, verSiguienteFolio } from '@/shared/utils/folios';
 import {
   FASES,
   avance,
@@ -9,6 +10,7 @@ import {
   faseActual,
   faseDelPaso,
   motivoBloqueo,
+  proximoPaso,
   situacionOperacion,
   type ContextoOperacion,
   type PasoResumen,
@@ -27,7 +29,7 @@ export async function dalRequisitosDocumentos(tipo: TipoOperacion) {
 const incluirResumen = {
   cliente: { select: { folio: true, razonSocial: true, tipo: true } },
   importador: { select: { razonSocial: true } },
-  pasos: { select: { estado: true, paso: { select: { clave: true, faseImpo: true, faseExpo: true, orden: true, ordenExpo: true } } } },
+  pasos: { select: { estado: true, paso: { select: { clave: true, nombre: true, faseImpo: true, faseExpo: true, orden: true, ordenExpo: true } } } },
   documentos: { select: { tipo: true, estado: true } },
   contenedores: { select: { numeroContenedor: true } },
 } satisfies Prisma.TraficoInclude;
@@ -62,6 +64,8 @@ function aResumen(t: TraficoResumen, requisitos: Map<string, { requisito: Requis
     cerrada: t.cerradaEn != null,
   };
   const fase = faseActual(pasos, ctx);
+  const estados = Object.fromEntries(pasos.map((p) => [p.clave, p.estado])) as Partial<Record<HitoOperativo, EstadoPaso>>;
+  const nombres = new Map(t.pasos.map((p) => [p.paso.clave, p.paso.nombre]));
   return {
     id: t.id,
     folio: t.referenciaAutomatica,
@@ -81,7 +85,8 @@ function aResumen(t: TraficoResumen, requisitos: Map<string, { requisito: Requis
     fase,
     faseNombre: FASES[t.tipoOperacion][fase - 1],
     avance: avance(pasos),
-    estadosPasos: Object.fromEntries(pasos.map((p) => [p.clave, p.estado])) as Partial<Record<HitoOperativo, EstadoPaso>>,
+    estadosPasos: estados,
+    proximoPaso: proximoPaso(pasos.filter((p) => p.estado !== 'NO_APLICA').map((p) => ({ ...p, nombre: nombres.get(p.clave) ?? p.clave })), { ...ctx, estados }),
     documentosRechazados: t.documentos.filter((d) => d.estado === 'RECHAZADO').length,
     contenedores: t.contenedores.map((c) => c.numeroContenedor),
     creadaEn: t.createdAt.toISOString(),
@@ -255,9 +260,18 @@ export async function dalOpcionesClientes(): Promise<OpcionCliente[]> {
 
 /** Catálogos para crear o editar operaciones. */
 export async function dalCatalogosOperacion() {
-  const [aduanas, claves] = await Promise.all([
+  const [aduanas, claves, documentos, agencia, siguienteFolio] = await Promise.all([
     prisma.aduana.findMany({ where: { activa: true }, orderBy: { nombre: 'asc' } }),
     prisma.clavePedimento.findMany({ where: { activa: true }, orderBy: { clave: 'asc' } }),
+    prisma.documentoConfig.findMany({ orderBy: { tipo: 'asc' } }),
+    prisma.configuracionAgencia.findUnique({ where: { id: 1 }, select: { patente: true } }),
+    verSiguienteFolio(PREFIJO_FOLIO.OPERACION),
   ]);
-  return { aduanas: aduanas.map((a) => ({ clave: a.clave, nombre: a.nombre })), claves };
+  return {
+    aduanas: aduanas.map((a) => ({ clave: a.clave, nombre: a.nombre })),
+    claves,
+    documentos: documentos.map((d) => ({ tipo: d.tipo, nombre: d.nombre, impo: d.requisitoImpo !== 'NO_APLICA', expo: d.requisitoExpo !== 'NO_APLICA' })),
+    patente: agencia?.patente ?? null,
+    siguienteFolio,
+  };
 }

@@ -27,6 +27,8 @@ export interface VistaAlterna<T> {
   icono: ReactNode;
   porPagina: number;
   render: (filas: T[]) => ReactNode;
+  /** false = muestra todas las filas sin paginar (p. ej. un tablero por columnas), aun sin resultados. */
+  paginar?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -231,8 +233,8 @@ export function DataTable<T>({
 
       {enAlt ? (
         <div className="clp-dt-altcont">
-          {visibles.length ? vistaAlterna!.render(enPaginaAlt) : <div className="clp-dt-alt-vacia">{vacio ?? "No hay resultados con esos filtros."}</div>}
-          {visibles.length && (flotante || totalAlt > 1) ? (
+          {vistaAlterna!.paginar === false ? vistaAlterna!.render(visibles) : visibles.length ? vistaAlterna!.render(enPaginaAlt) : <div className="clp-dt-alt-vacia">{vacio ?? "No hay resultados con esos filtros."}</div>}
+          {vistaAlterna!.paginar !== false && visibles.length && (flotante || totalAlt > 1) ? (
             <nav className="clp-alt-pag" aria-label="Paginación">
               <button type="button" className="clp-ap-btn" disabled={paginaAltActual === 0} onClick={() => setPaginaAlt(paginaAltActual - 1)} aria-label="Página anterior"><ChevronLeft aria-hidden /></button>
               <span>Página <b>{paginaAltActual + 1}</b> de <b>{totalAlt}</b></span>

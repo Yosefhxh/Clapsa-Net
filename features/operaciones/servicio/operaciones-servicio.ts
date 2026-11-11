@@ -293,6 +293,18 @@ export async function cambiarEstadoPaso(
   });
 }
 
+export async function folioDeOperacion(id: string): Promise<string> {
+  const t = await prisma.trafico.findUniqueOrThrow({ where: { id }, select: { referenciaAutomatica: true } });
+  return t.referenciaAutomatica;
+}
+
+/** Id del documento de ese tipo en la operación (solo los que aplican a su tipo de operación). */
+export async function documentoDeTipo(traficoId: string, tipo: TipoDocumento): Promise<string> {
+  const doc = await prisma.documentoOperacion.findFirst({ where: { traficoId, tipo }, select: { id: true }, orderBy: { id: 'asc' } });
+  if (!doc) throw new ErrorNegocio('Ese documento no aplica a esta operación.');
+  return doc.id;
+}
+
 export async function subirDocumento(documentoId: string, archivo: unknown, usuario: UsuarioSesion) {
   exigir(usuario, 'documentos.revisar');
   const pdf = validarPdf(archivo);

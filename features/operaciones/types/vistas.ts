@@ -41,6 +41,8 @@ export interface OperacionResumen {
   faseNombre: string;
   avance: Avance;
   estadosPasos: Partial<Record<HitoOperativo, EstadoPaso>>;
+  /** Lo siguiente que hay que hacer, para el tablero y la fila desplegable. */
+  proximoPaso: string;
   documentosRechazados: number;
   contenedores: string[];
   creadaEn: string;
