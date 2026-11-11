@@ -430,6 +430,9 @@ export async function asignarProveedorPaso(traficoPasoId: string, proveedorId: n
       include: { proveedor: true },
     });
     if (!servicio) throw new ErrorNegocio(`Ese proveedor no tiene registrado el servicio “${tp.paso.nombre}”.`);
+    if (servicio.proveedor.estado === 'INACTIVO' && tp.proveedorId !== proveedorId) {
+      throw new ErrorNegocio(`${servicio.proveedor.razonSocial} está dado de baja. Reactívalo en Proveedores para asignarlo.`);
+    }
     if (servicio.proveedor.aduanas.length && !servicio.proveedor.aduanas.includes(t.aduana)) {
       throw new ErrorNegocio(`Ese proveedor no da servicio en ${t.aduana}.`);
     }

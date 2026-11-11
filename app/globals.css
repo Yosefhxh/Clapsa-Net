@@ -1415,6 +1415,54 @@
   .clp-esq .clp-esq-card i.c { width: 55%; }
   .clp-esq .clp-esq-card i.pie { width: 100%; height: 30px; margin-top: 8px; border-radius: 8px; }
 
+  /* ===== Maqueta aprobada · Proveedores ===== */
+  .clp-cat { display: inline-flex; flex-shrink: 0; align-items: center; gap: 6px; padding: 3px 10px; border: 1px solid transparent; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .clp-cat::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.8; }
+  .clp-cat-aduanal { border-color: rgb(49 87 194 / 0.22); background: rgb(49 87 194 / 0.10); color: #1E3A8A; }
+  .clp-cat-logistica { border-color: rgb(46 158 122 / 0.26); background: rgb(46 158 122 / 0.10); color: #14532D; }
+  .clp-cat-generales { border-color: rgb(100 116 139 / 0.22); background: rgb(100 116 139 / 0.10); color: #334155; }
+  .clp-mp-card .clp-mc-der { gap: 6px; }
+  .clp-mp-servicios { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; margin-bottom: 14px; }
+  .clp-mp-servicios span { padding: 3px 9px; border: 1px solid #EEF2F6; border-radius: 6px; background: #F8FAFC; font-size: 11.5px; font-weight: 500; white-space: nowrap; color: #475569; }
+  .clp-mp-servicios span.mas { border-color: #DCE3F4; background: var(--color-cielo); font-weight: 600; color: var(--color-aduanaBlue); }
+  .clp-mp-servicios span.vacio { border-style: dashed; background: transparent; color: #94A3B8; }
+  .clp-mp-mas { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; background: var(--color-cielo); font-size: 11px; font-weight: 600; vertical-align: 1px; color: var(--color-aduanaBlue); }
+  .clp-mm-ops .fuerte { font-weight: 600; color: var(--color-titulo); }
+  .clp-dt-lista { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .clp-dt-lista li { display: flex; justify-content: space-between; gap: 10px; padding-bottom: 6px; border-bottom: 1px dashed var(--color-linea-suave); font-size: 13px; color: var(--color-texto); }
+  .clp-dt-lista li:last-child { padding-bottom: 0; border-bottom: 0; }
+  .clp-dt-vacio { font-size: 13px; color: var(--color-texto-tenue); }
+  .clp-mm-doc-pdf { max-width: none; }
+  .clp-mm-doc-pdf iframe { display: block; width: 100%; height: min(68vh, 760px); border: 0; }
+
+  /* Registro de proveedor: servicios con su tarifa y aduanas */
+  .clp-rc:has(.clp-rc-prov-serv) .clp-rc-card { padding-top: 14px; }
+  .clp-rc:has(.clp-rc-prov-serv) .clp-rc-card-h { margin-bottom: 10px; }
+  .clp-rc-prov-datos .clp-rc-grid { gap: 8px 18px; }
+  @media (min-width: 64rem) { .clp-rc:has(.clp-rc-prov-serv) .clp-rc-der { overflow-y: auto; } }
+  .clp-rc:has(.clp-rc-prov-serv) .clp-rc-der > *, .clp-rc-prov-serv > * { flex-shrink: 0; }
+  .clp-pv-leyenda { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-texto-tenue); }
+  .clp-pv-leyenda i, .clp-pv-chip.sug::after { width: 7px; height: 7px; border-radius: 50%; background: #7A4BD6; }
+  .clp-pv-bloque { display: flex; flex-direction: column; gap: 6px; }
+  .clp-pv-bloque + .clp-pv-bloque, .clp-pv-tarifas + .clp-pv-bloque { margin-top: 10px; }
+  .clp-pv-aduanas { margin-bottom: 18px; }
+  .clp-pv-l { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--color-texto-suave); }
+  .clp-pv-l em { font-style: normal; color: #B42318; }
+  .clp-pv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .clp-pv-chip { position: relative; padding: 6px 11px; border: 1px solid #D5DCE8; border-radius: 8px; background: #fff; font-size: 13px; font-weight: 600; color: var(--color-texto-suave); transition: border-color 0.15s, background 0.15s, color 0.15s; }
+  .clp-pv-chip:hover { border-color: #B9C4DC; }
+  .clp-pv-chip:focus-visible { outline: 2px solid var(--color-aduanaBlue); outline-offset: 2px; }
+  .clp-pv-chip.sug::after { content: ""; position: absolute; top: -3px; right: -3px; border: 2px solid #fff; }
+  .clp-pv-chip[aria-pressed="true"] { border-color: var(--color-aduanaBlue); background: var(--color-cielo); color: var(--color-aduanaBlue); }
+  .clp-pv-tarifas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+  @media (max-width: 767px) { .clp-pv-tarifas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 479px) { .clp-pv-tarifas { grid-template-columns: minmax(0, 1fr); } }
+  .clp-pv-t { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 4px 3px 10px; border: 1px solid var(--color-linea); border-radius: 8px; background: #F8FAFC; font-size: 12px; font-weight: 500; color: var(--color-texto-suave); }
+  .clp-pv-t > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .clp-pv-t-in { display: inline-flex; flex-shrink: 0; align-items: center; gap: 2px; color: var(--color-texto-tenue); }
+  .clp-pv-t-in input { box-sizing: border-box; width: 72px; height: 26px; padding: 0 6px; border: 1px solid #D5DCE8; border-radius: 6px; background: #fff; font: inherit; font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: right; }
+  .clp-pv-t-in input:focus { outline: none; border-color: var(--color-aduanaBlue); box-shadow: 0 0 0 3px rgb(42 72 166 / 0.14); }
+
   /* Clientes y registro a todo el alto del marco en escritorio */
   @media (min-width: 64rem) {
     main:has(.clp-cli-tabla, .clp-rc) { display: flex; flex-direction: column; }

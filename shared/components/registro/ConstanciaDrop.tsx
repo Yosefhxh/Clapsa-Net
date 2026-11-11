@@ -55,7 +55,7 @@ export function ConstanciaDrop({ estado, info, encima, ayuda, campos, urlGuardad
           <div className="clp-rd-mini"><div className="clp-rd-fake"><i /><i /><b /><i /><i className="c" /><i /><b /><i /><i className="c" /><i /></div></div>
           <div className="clp-rd-meta">
             <div className="clp-rd-nom"><span className="clp-rd-ok"><Check aria-hidden /></span><span>Constancia guardada</span></div>
-            <small>Se cargó al registrar al cliente</small>
+            <small>Se cargó con el registro</small>
             {urlGuardada ? <a className="clp-btn clp-btn-secondary clp-btn-sm" href={urlGuardada} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}><ExternalLink className="h-4 w-4" aria-hidden />Ver constancia</a> : null}
             <span className="clp-btn clp-btn-secondary clp-btn-sm clp-rd-btn">Cambiar archivo</span>
           </div>

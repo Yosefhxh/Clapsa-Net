@@ -15,6 +15,8 @@ export interface ProveedorVista {
   fuenteAlta: 'MANUAL' | 'CONSTANCIA';
   fechaAlta: string;
   aduanas: string[];
+  estado: 'ACTIVO' | 'INACTIVO';
+  pdfConstanciaUrl: string | null;
   servicios: { pasoId: string; clave: HitoOperativo; nombre: string; tarifa: number | null }[];
   operacionesActivas: number;
   serviciosEsteAnio: number;
@@ -41,6 +43,8 @@ export async function dalObtenerProveedores(): Promise<ProveedorVista[]> {
     fuenteAlta: p.fuenteAlta,
     fechaAlta: p.fechaAlta.toISOString(),
     aduanas: p.aduanas,
+    estado: p.estado,
+    pdfConstanciaUrl: p.pdfConstanciaUrl,
     servicios: p.servicios
       .sort((a, b) => a.paso.orden - b.paso.orden)
       .map((s) => ({ pasoId: s.pasoId, clave: s.paso.clave, nombre: s.paso.nombre, tarifa: s.tarifaBase == null ? null : Number(s.tarifaBase) })),
@@ -54,9 +58,10 @@ export async function dalPasosDeServicio() {
   return prisma.paso.findMany({ where: { esServicio: true, activo: true }, orderBy: { orden: 'asc' }, select: { id: true, clave: true, nombre: true } });
 }
 
-/** Para asignar proveedor en una operación: por cada paso, quién lo presta y a qué tarifa. */
+/** Para asignar proveedor en una operación: por cada paso, quién lo presta y a qué tarifa (solo activos). */
 export async function dalProveedoresPorServicio(): Promise<Partial<Record<HitoOperativo, ProveedorParaPaso[]>>> {
   const servicios = await prisma.proveedorServicio.findMany({
+    where: { proveedor: { estado: 'ACTIVO' } },
     include: { paso: { select: { clave: true } }, proveedor: { select: { id: true, razonSocial: true, tipoProveedor: true, aduanas: true } } },
     orderBy: { proveedor: { razonSocial: 'asc' } },
   });

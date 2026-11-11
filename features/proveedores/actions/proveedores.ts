@@ -1,10 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { FuenteAltaProveedor, TipoProveedor } from '@prisma/client';
+import { EstadoCatalogo, FuenteAltaProveedor, TipoProveedor } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '@/shared/lib/prisma';
 import { requerirUsuario } from '@/shared/auth/session';
+import { guardarArchivo, validarPdf } from '@/shared/lib/almacenamiento';
 import { ejecutar, ErrorNegocio, type Resultado } from '@/shared/lib/resultado';
 import { validarRfc } from '@/shared/utils/validaciones';
 
@@ -46,15 +47,39 @@ async function validarCatalogos(datos: ReturnType<typeof validar>) {
 
 function refrescar() {
   revalidatePath('/proveedores');
+  revalidatePath('/operaciones', 'layout');
 }
 
-export async function registrarProveedor(datos: DatosProveedor): Promise<Resultado> {
+/** Valida la constancia (si viene) antes de tocar la base de datos. */
+const constanciaDe = (archivo?: FormData | null) => {
+  const f = archivo?.get('constancia');
+  return f ? validarPdf(f) : null;
+};
+
+/** RFC y correo son únicos: avisa con un mensaje claro antes de que falle la base. */
+async function validarUnicos(d: ReturnType<typeof validar>, id?: number) {
+  const otro = await prisma.proveedores.findFirst({
+    where: { OR: [{ rfc: d.rfc }, { correo: d.correo }], ...(id ? { id: { not: id } } : {}) },
+    select: { rfc: true, razonSocial: true },
+  });
+  if (!otro) return;
+  throw new ErrorNegocio(otro.rfc === d.rfc
+    ? `Ya existe ${id ? 'otro ' : 'un '}proveedor con el RFC ${d.rfc}.`
+    : `El correo ${d.correo} ya lo usa ${otro.razonSocial}.`);
+}
+
+/** Registra un proveedor; si se cargó la constancia de situación fiscal, se guarda para poder consultarla. */
+export async function registrarProveedor(datos: DatosProveedor, archivo?: FormData | null): Promise<Resultado<{ id: number }>> {
   return ejecutar('registrarProveedor', async () => {
     await requerirUsuario('catalogos.editar');
     const d = validar(datos);
+    const pdf = constanciaDe(archivo);
     await validarCatalogos(d);
-    await prisma.proveedores.create({
+    await validarUnicos(d);
+    const pdfConstanciaUrl = pdf ? await guardarArchivo(pdf, `proveedores/${d.rfc}`, 'constancia-fiscal') : null;
+    const p = await prisma.proveedores.create({
       data: {
+        pdfConstanciaUrl,
         razonSocial: d.razonSocial,
         tipoProveedor: d.tipoProveedor,
         rfc: d.rfc,
@@ -67,15 +92,18 @@ export async function registrarProveedor(datos: DatosProveedor): Promise<Resulta
       },
     });
     refrescar();
-    return undefined;
-  }, 'Proveedor registrado.');
+    return { id: p.id };
+  });
 }
 
-export async function actualizarProveedor(id: number, datos: DatosProveedor): Promise<Resultado> {
+export async function actualizarProveedor(id: number, datos: DatosProveedor, archivo?: FormData | null): Promise<Resultado> {
   return ejecutar('actualizarProveedor', async () => {
     await requerirUsuario('catalogos.editar');
     const d = validar(datos);
+    const pdf = constanciaDe(archivo);
     await validarCatalogos(d);
+    await validarUnicos(d, id);
+    const pdfConstanciaUrl = pdf ? await guardarArchivo(pdf, `proveedores/${d.rfc}`, 'constancia-fiscal') : undefined;
     await prisma.$transaction(async (tx) => {
       // Un servicio que ya está asignado en una operación abierta no se puede quitar.
       const enUso = await tx.traficoPaso.findMany({
@@ -95,6 +123,7 @@ export async function actualizarProveedor(id: number, datos: DatosProveedor): Pr
           telefono: d.telefono,
           direccion: d.direccion,
           aduanas: [...new Set(d.aduanas)],
+          ...(pdfConstanciaUrl ? { pdfConstanciaUrl, fuenteAlta: 'CONSTANCIA' as const } : {}),
         },
       });
       await tx.proveedorServicio.deleteMany({ where: { proveedorId: id, pasoId: { notIn: d.servicios.map((s) => s.pasoId) } } });
@@ -109,6 +138,19 @@ export async function actualizarProveedor(id: number, datos: DatosProveedor): Pr
     refrescar();
     return undefined;
   }, 'Proveedor actualizado.');
+}
+
+/** Dar de baja o reactivar: un proveedor inactivo ya no se ofrece al asignar pasos. */
+export async function cambiarEstadoProveedores(ids: number[], estado: EstadoCatalogo): Promise<Resultado<{ cambiados: number }>> {
+  return ejecutar('cambiarEstadoProveedores', async () => {
+    await requerirUsuario('catalogos.eliminar');
+    const lista = z.array(z.number().int().positive()).min(1, 'Elige al menos un proveedor.').max(500).safeParse(ids);
+    if (!lista.success) throw new ErrorNegocio(lista.error.issues[0]?.message ?? 'Elige al menos un proveedor.');
+    if (!Object.values(EstadoCatalogo).includes(estado)) throw new ErrorNegocio('Estado no válido.');
+    const r = await prisma.proveedores.updateMany({ where: { id: { in: lista.data }, estado: { not: estado } }, data: { estado } });
+    refrescar();
+    return { cambiados: r.count };
+  });
 }
 
 export async function eliminarProveedorAction(id: number): Promise<Resultado> {

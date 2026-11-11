@@ -125,15 +125,15 @@ enum TipoCargo {
 }
 
 model Cliente {
-  id                   Int         @id @default(autoincrement())
-  folio                String      @unique
+  id                   Int            @id @default(autoincrement())
+  folio                String         @unique
   razonSocial          String
-  rfc                  String      @unique
-  domicilio            String      @default("No especificado")
+  rfc                  String         @unique
+  domicilio            String         @default("No especificado")
   tipo                 TipoCliente
-  fechaAlta            DateTime    @default(now())
+  fechaAlta            DateTime       @default(now())
   clientePadreId       Int?
-  encargoConferido     Boolean     @default(false)
+  encargoConferido     Boolean        @default(false)
   fechaVigenciaEncargo DateTime?
   pdfEncargoUrl        String?
   /// null = sin verificar.
@@ -142,10 +142,10 @@ model Cliente {
   estado               EstadoCatalogo @default(ACTIVO)
   /// Constancia de situación fiscal (PDF) con la que se registró.
   pdfConstanciaUrl     String?
-  clientePadre         Cliente?    @relation("ClienteJerarquia", fields: [clientePadreId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  subclientes          Cliente[]   @relation("ClienteJerarquia")
-  traficos             Trafico[]   @relation("ClienteTrafico")
-  traficosImportador   Trafico[]   @relation("ImportadorTrafico")
+  clientePadre         Cliente?       @relation("ClienteJerarquia", fields: [clientePadreId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  subclientes          Cliente[]      @relation("ClienteJerarquia")
+  traficos             Trafico[]      @relation("ClienteTrafico")
+  traficosImportador   Trafico[]      @relation("ImportadorTrafico")
 
   @@index([tipo])
   @@index([clientePadreId])
@@ -153,21 +153,26 @@ model Cliente {
 }
 
 model Proveedores {
-  id            Int                 @id @default(autoincrement())
-  tipoProveedor TipoProveedor
-  razonSocial   String
-  rfc           String              @unique
-  correo        String              @unique
-  telefono      String
-  direccion     String
-  fuenteAlta    FuenteAltaProveedor @default(MANUAL)
-  fechaAlta     DateTime            @default(now())
+  id               Int                 @id @default(autoincrement())
+  tipoProveedor    TipoProveedor
+  razonSocial      String
+  rfc              String              @unique
+  correo           String              @unique
+  telefono         String
+  direccion        String
+  fuenteAlta       FuenteAltaProveedor @default(MANUAL)
+  fechaAlta        DateTime            @default(now())
   /// Nombres de aduana del catálogo donde presta servicio.
-  aduanas       String[]            @default([])
-  servicios     ProveedorServicio[]
-  traficoPasos  TraficoPaso[]
+  aduanas          String[]            @default([])
+  /// Un proveedor inactivo ya no se ofrece al asignar pasos; su historial se conserva.
+  estado           EstadoCatalogo      @default(ACTIVO)
+  /// Constancia de situación fiscal guardada al registrarlo (opcional).
+  pdfConstanciaUrl String?
+  servicios        ProveedorServicio[]
+  traficoPasos     TraficoPaso[]
 
   @@index([tipoProveedor])
+  @@index([estado])
 }
 
 /// Qué paso del despacho puede hacer cada proveedor y con qué tarifa base.
@@ -195,14 +200,14 @@ model Usuario {
   ultimoAcceso  DateTime?
   updatedAt     DateTime      @updatedAt
 
-  sesiones             Sesion[]
-  eventos              EventoOperacion[]
-  widgets              WidgetUsuario[]
-  preferencias         PreferenciaUsuario[]
-  traficosEjecutivo    Trafico[]            @relation("EjecutivoTrafico")
-  pasosResponsable     TraficoPaso[]        @relation("ResponsablePaso")
-  documentosSubidos    DocumentoOperacion[] @relation("DocumentoSubidoPor")
-  documentosRevisados  DocumentoOperacion[] @relation("DocumentoRevisadoPor")
+  sesiones            Sesion[]
+  eventos             EventoOperacion[]
+  widgets             WidgetUsuario[]
+  preferencias        PreferenciaUsuario[]
+  traficosEjecutivo   Trafico[]            @relation("EjecutivoTrafico")
+  pasosResponsable    TraficoPaso[]        @relation("ResponsablePaso")
+  documentosSubidos   DocumentoOperacion[] @relation("DocumentoSubidoPor")
+  documentosRevisados DocumentoOperacion[] @relation("DocumentoRevisadoPor")
 
   @@index([tipoUsuario, estado])
 }
@@ -510,7 +515,7 @@ model PreferenciaUsuario {
 }
 
 model WidgetUsuario {
-  id        Int     @id @default(autoincrement())
+  id        Int    @id @default(autoincrement())
   usuarioId Int
   widget    String
   orden     Int
