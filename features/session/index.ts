@@ -1,6 +1,5 @@
 // Public API: features/session
 
-export { SessionProvider, useSession, LOGIN_DATE_STORAGE_KEY } from "./components/SessionProvider";
-export { UserSessionBadge } from "./components/UserSessionBadge";
+export { SessionProvider, useSession } from "./components/SessionProvider";
+export { PerfilCapsula } from "./components/PerfilCapsula";
 export { useLogin } from "./hooks/useLogin";
-

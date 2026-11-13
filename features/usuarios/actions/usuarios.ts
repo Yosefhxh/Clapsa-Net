@@ -1,14 +1,24 @@
 'use server';
 
-import crypto from 'crypto';
-import { Prisma, TipoUsuario, EstadoUsuario } from '@prisma/client';
+import { EstadoUsuario, TipoUsuario } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { hashearPassword, validarPasswordNueva, verificarPassword } from '@/shared/auth/password';
 import {
-    dalActualizarUsuario,
-    dalBuscarUsuarioPorCorreo,
-    dalCrearUsuario,
-    dalEliminarUsuario,
-    dalObtenerUsuarios,
+  cerrarSesion,
+  cerrarSesionesDeUsuario,
+  crearSesion,
+  requerirUsuario,
+} from '@/shared/auth/session';
+import { ErrorNegocio, mensajeDeError } from '@/shared/lib/resultado';
+import {
+  dalActualizarUsuario,
+  dalBuscarUsuarioPorCorreo,
+  dalContarAdminsActivos,
+  dalCrearUsuario,
+  dalEliminarUsuario,
+  dalObtenerUsuarioPorId,
+  dalObtenerUsuarios,
 } from '../dal/usuarios-dal';
 
 export interface UsuarioFormData {
@@ -19,165 +29,137 @@ export interface UsuarioFormData {
   password?: string;
 }
 
-const PASSWORD_HASH_PREFIX = 'sha256:';
-const DEFAULT_SUPERADMIN = {
-    nombre: 'Super Admin',
-    correo: 'superadmin@clapsa.net',
-    password: 'SuperAdmin2026!',
-};
+const normalizarCorreo = (correo: string) => correo.trim().toLowerCase();
+const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function normalizarCorreo(correo: string) {
-    return correo.trim().toLowerCase();
-}
+export async function iniciarSesionAction(correo: string, password: string) {
+  try {
+    const correoNormalizado = normalizarCorreo(correo);
+    const usuario = correoNormalizado ? await dalBuscarUsuarioPorCorreo(correoNormalizado) : null;
+    // Mismo mensaje para correo y contraseña: no revela qué cuentas existen.
+    const credencialesInvalidas = { success: false as const, error: 'Correo o contraseña incorrectos' };
 
-function hashearPassword(password: string) {
-    return `${PASSWORD_HASH_PREFIX}${crypto.createHash('sha256').update(password).digest('hex')}`;
-}
+    if (!usuario || usuario.estado !== EstadoUsuario.ACTIVO) return credencialesInvalidas;
 
-function verificarPassword(passwordIngresada: string, passwordPersistida: string) {
-    if (!passwordPersistida) {
-        return false;
-    }
+    const { valida, requiereActualizar } = await verificarPassword(password, usuario.passwordHash);
+    if (!valida) return credencialesInvalidas;
 
-    if (passwordPersistida.startsWith(PASSWORD_HASH_PREFIX)) {
-        return passwordPersistida === hashearPassword(passwordIngresada);
-    }
-
-    return passwordPersistida === passwordIngresada;
-}
-
-function usuarioParaSesion(usuario: {
-    id: number;
-    nombre: string;
-    correo: string;
-    tipoUsuario: TipoUsuario;
-    estado: EstadoUsuario;
-    fechaRegistro: Date;
-}) {
-    return {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        correo: usuario.correo,
-        tipoUsuario: usuario.tipoUsuario,
-        estado: usuario.estado,
-        fechaRegistro: usuario.fechaRegistro.toISOString(),
-    };
-}
-
-async function asegurarSuperadmin() {
-    const correoSuperadmin = normalizarCorreo(DEFAULT_SUPERADMIN.correo);
-    const superadminExistente = await dalBuscarUsuarioPorCorreo(correoSuperadmin);
-
-    if (superadminExistente) {
-        return superadminExistente;
-    }
-
-    return dalCrearUsuario({
-        nombre: DEFAULT_SUPERADMIN.nombre,
-        correo: correoSuperadmin,
-        tipoUsuario: TipoUsuario.ADMIN,
-        estado: EstadoUsuario.ACTIVO,
-        passwordHash: hashearPassword(DEFAULT_SUPERADMIN.password),
+    await dalActualizarUsuario(usuario.id, {
+      ultimoAcceso: new Date(),
+      ...(requiereActualizar ? { passwordHash: await hashearPassword(password) } : {}),
     });
+
+    await crearSesion(usuario.id);
+    return { success: true as const };
+  } catch (error) {
+    return { success: false as const, error: mensajeDeError(error, 'iniciarSesion') };
+  }
+}
+
+export async function cerrarSesionAction() {
+  await cerrarSesion();
+  redirect('/login');
 }
 
 export async function gestionarUsuario(datos: UsuarioFormData, id?: number) {
-    try {
-        const passwordHash = datos.password?.trim() ? hashearPassword(datos.password.trim()) : undefined;
+  try {
+    const actual = await requerirUsuario('usuarios.gestionar');
+    const nombre = datos.nombre.trim();
+    const correo = normalizarCorreo(datos.correo);
+    const estado = datos.estado === 'activo' ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO;
+    const password = datos.password?.trim() ?? '';
 
-        const dataToSave: Prisma.UsuarioUpdateInput = {
-            nombre: datos.nombre,
-            correo: normalizarCorreo(datos.correo),
-            tipoUsuario: datos.tipoUsuario,
-            estado: datos.estado.toUpperCase() === 'ACTIVO' ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO,
-            ...(passwordHash && { passwordHash })
-        };
-
-        if (id) {
-            await dalActualizarUsuario(Number(id), dataToSave);
-        } else {
-            await dalCrearUsuario({
-                nombre: datos.nombre,
-                correo: normalizarCorreo(datos.correo),
-                tipoUsuario: datos.tipoUsuario,
-                estado: datos.estado.toUpperCase() === 'ACTIVO' ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO,
-                passwordHash: passwordHash ?? '',
-            });
-        }
-
-        revalidatePath('/usuarios');
-        return { success: true };
-
-    } catch (error: unknown) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            if (error.code === 'P2002') {
-                return { success: false, error: 'El correo electrónico ya está registrado' };
-            }
-            return { success: false, error: `Error de base de datos (${error.code})` };
-        }
-        
-        console.error('Error en gestionarUsuario:', error);
-        return { success: false, error: 'Ocurrió un error inesperado' };
+    if (!nombre) throw new ErrorNegocio('El nombre es obligatorio.');
+    if (!CORREO_VALIDO.test(correo)) throw new ErrorNegocio('El correo no es válido.');
+    if (!Object.values(TipoUsuario).includes(datos.tipoUsuario)) throw new ErrorNegocio('El rol no es válido.');
+    if (!id && !password) throw new ErrorNegocio('La contraseña es obligatoria.');
+    if (password) {
+      const errorPassword = validarPasswordNueva(password);
+      if (errorPassword) throw new ErrorNegocio(errorPassword);
     }
+
+    const passwordHash = password ? await hashearPassword(password) : undefined;
+
+    if (id) {
+      const existente = await dalObtenerUsuarioPorId(id);
+      if (!existente) throw new ErrorNegocio('El usuario ya no existe.');
+
+      const dejaDeSerAdminActivo =
+        existente.tipoUsuario === TipoUsuario.ADMIN &&
+        existente.estado === EstadoUsuario.ACTIVO &&
+        (datos.tipoUsuario !== TipoUsuario.ADMIN || estado !== EstadoUsuario.ACTIVO);
+      if (dejaDeSerAdminActivo && (await dalContarAdminsActivos()) <= 1) {
+        throw new ErrorNegocio('Debe quedar al menos un administrador activo.');
+      }
+      if (id === actual.id && estado !== EstadoUsuario.ACTIVO) {
+        throw new ErrorNegocio('No puedes desactivar tu propio usuario.');
+      }
+      const otro = await dalBuscarUsuarioPorCorreo(correo);
+      if (otro && otro.id !== id) throw new ErrorNegocio(`Ya existe otro usuario con el correo ${correo}.`);
+
+      await dalActualizarUsuario(id, {
+        nombre,
+        correo,
+        tipoUsuario: datos.tipoUsuario,
+        estado,
+        ...(passwordHash && { passwordHash }),
+      });
+      if (estado !== EstadoUsuario.ACTIVO || passwordHash) await cerrarSesionesDeUsuario(id);
+      revalidatePath('/usuarios');
+      return { success: true, id };
+    }
+
+    const otro = await dalBuscarUsuarioPorCorreo(correo);
+    if (otro) throw new ErrorNegocio(`Ya existe un usuario con el correo ${correo}.`);
+    const creado = await dalCrearUsuario({ nombre, correo, tipoUsuario: datos.tipoUsuario, estado, passwordHash: passwordHash! });
+    revalidatePath('/usuarios');
+    return { success: true, id: creado.id };
+  } catch (error) {
+    return { success: false, error: mensajeDeError(error, 'gestionarUsuario') };
+  }
 }
 
-export async function iniciarSesionAction(correo: string, password: string) {
-    try {
-        await asegurarSuperadmin();
-
-        const correoNormalizado = normalizarCorreo(correo);
-
-        if (!correoNormalizado) {
-            return { success: false, error: 'Usuario incorrecto' };
-        }
-
-        const usuario = await dalBuscarUsuarioPorCorreo(correoNormalizado);
-
-        if (!usuario) {
-            return { success: false, error: 'Usuario no encontrado' };
-        }
-
-        if (usuario.estado !== EstadoUsuario.ACTIVO) {
-            return { success: false, error: 'Usuario incorrecto' };
-        }
-
-        if (!verificarPassword(password, usuario.passwordHash)) {
-            return { success: false, error: 'Contraseña incorrecta' };
-        }
-
-        return {
-            success: true,
-            usuario: usuarioParaSesion(usuario),
-        };
-    } catch (error) {
-        console.error('Error en iniciarSesionAction:', error);
-        return { success: false, error: 'Ocurrió un error inesperado' };
+/** Desactivar o reactivar: el usuario inactivo no puede iniciar sesión y se cierran sus sesiones. */
+export async function cambiarEstadoUsuario(id: number, activo: boolean) {
+  try {
+    const actual = await requerirUsuario('usuarios.gestionar');
+    const existente = await dalObtenerUsuarioPorId(id);
+    if (!existente) throw new ErrorNegocio('El usuario ya no existe.');
+    if (!activo) {
+      if (id === actual.id) throw new ErrorNegocio('No puedes desactivar tu propio usuario.');
+      if (existente.tipoUsuario === TipoUsuario.ADMIN && existente.estado === EstadoUsuario.ACTIVO && (await dalContarAdminsActivos()) <= 1) {
+        throw new ErrorNegocio('Debe quedar al menos un administrador activo.');
+      }
     }
+    await dalActualizarUsuario(id, { estado: activo ? EstadoUsuario.ACTIVO : EstadoUsuario.INACTIVO });
+    if (!activo) await cerrarSesionesDeUsuario(id);
+    revalidatePath('/usuarios');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: mensajeDeError(error, 'cambiarEstadoUsuario') };
+  }
 }
 
 export async function obtenerUsuarios() {
-    try {
-        return await dalObtenerUsuarios();
-    } catch (error) {
-        console.error('Error al obtener usuarios:', error);
-        return [];
-    }
+  await requerirUsuario('usuarios.gestionar');
+  return dalObtenerUsuarios();
 }
 
 export async function eliminarUsuarioAction(id: number) {
-    try {
-        await dalEliminarUsuario(Number(id));
+  try {
+    const actual = await requerirUsuario('usuarios.gestionar');
+    if (id === actual.id) throw new ErrorNegocio('No puedes eliminar tu propio usuario.');
 
-        revalidatePath('/usuarios');
-        return { success: true };
-
-    } catch (error: unknown) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            if (error.code === 'P2025') {
-                return { success: false, error: 'El usuario ya no existe' };
-            }
-            return { success: false, error: `Error de base de datos (${error.code})` };
-        }
-        return { success: false, error: 'Error al eliminar el usuario' };
+    const existente = await dalObtenerUsuarioPorId(id);
+    if (!existente) throw new ErrorNegocio('El usuario ya no existe.');
+    if (existente.tipoUsuario === TipoUsuario.ADMIN && existente.estado === EstadoUsuario.ACTIVO && (await dalContarAdminsActivos()) <= 1) {
+      throw new ErrorNegocio('Debe quedar al menos un administrador activo.');
     }
+
+    await dalEliminarUsuario(id);
+    revalidatePath('/usuarios');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: mensajeDeError(error, 'eliminarUsuario') };
+  }
 }

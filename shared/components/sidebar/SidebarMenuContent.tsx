@@ -1,86 +1,72 @@
-import { useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  Users,
+  Building2,
   Truck,
   BriefcaseBusiness,
   UserRound,
+  Settings,
+  type LucideIcon,
 } from "lucide-react";
+import { useSession } from "@/features/session";
 import { MenuItem } from "./MenuItem";
-import { SubmenuSection } from "./SubmenuSection";
+
+interface MenuLink {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  /** Destino al picar el icono. */
+  href: string;
+  /** Prefijo de ruta que deja el icono activo (incluye sus sub opciones). */
+  match: string;
+}
+
+/** Cápsula de arriba: módulos de trabajo diario. */
+const MENU_PRINCIPAL: MenuLink[] = [
+  { id: "home", label: "Home", icon: Home, href: "/", match: "/" },
+  { id: "clientes", label: "Clientes", icon: Building2, href: "/clientes/directo", match: "/clientes" },
+  { id: "proveedores", label: "Proveedores", icon: Truck, href: "/proveedores", match: "/proveedores" },
+  { id: "operaciones", label: "Operaciones", icon: BriefcaseBusiness, href: "/operaciones", match: "/operaciones" },
+];
+
+/** Cápsula de abajo: administración de la cuenta. */
+const MENU_CUENTA: MenuLink[] = [
+  { id: "usuarios", label: "Usuarios", icon: UserRound, href: "/usuarios", match: "/usuarios" },
+  { id: "configuracion", label: "Configuración", icon: Settings, href: "/configuracion", match: "/configuracion" },
+];
 
 export function SidebarMenuContent() {
   const pathname = usePathname();
-  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const { avisos } = useSession();
+  const n = (x: number, uno: string, varios: string) => `${x} ${x === 1 ? uno : varios}`;
+  const aviso = (id: string) =>
+    id === "clientes" && avisos?.encargosPorVencer ? { tono: "ambar" as const, texto: n(avisos.encargosPorVencer, "encargo por vencer", "encargos por vencer") }
+    : id === "operaciones" && avisos?.operacionesUrgentes ? { tono: "coral" as const, texto: n(avisos.operacionesUrgentes, "urgente", "urgentes") }
+    : null;
 
-  const toggleSubmenu = (menu: string) => {
-    setOpenSubmenu(openSubmenu === menu ? null : menu);
-  };
+  const isActive = (match: string) =>
+    match === "/" ? pathname === "/" : pathname === match || pathname.startsWith(`${match}/`);
+
+  const renderItem = (item: MenuLink) => (
+    <MenuItem
+      key={item.id}
+      href={item.href}
+      label={item.label}
+      icon={item.icon}
+      isActive={isActive(item.match)}
+      aviso={aviso(item.id)}
+    />
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="w-full py-4">
-        <h2 className="text-center text-[15px] font-medium text-white/50">
-          Menu Principal
-        </h2>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
-        <ul className="flex w-full flex-col space-y-1">
-          <MenuItem
-            href="/"
-            label="Home"
-            icon={Home}
-            isActive={pathname === "/"}
-          />
-
-          <SubmenuSection
-            label="Clientes"
-            icon={Users}
-            isOpen={openSubmenu === "clientes"}
-            onToggle={() => toggleSubmenu("clientes")}
-            isActive={pathname.includes("/clientes")}
-            defaultHref="/clientes/directo"
-            submenuItems={[
-              { href: "/clientes/directo", label: "Directo" },
-              { href: "/clientes/forwarder", label: "Forwarder" },
-            ]}
-          />
-
-          <SubmenuSection
-            label="Proveedores"
-            icon={Truck}
-            isOpen={openSubmenu === "proveedores"}
-            onToggle={() => toggleSubmenu("proveedores")}
-            isActive={pathname.includes("/proveedores")}
-            defaultHref="/proveedores/busqueda"
-            submenuItems={[
-              { href: "/proveedores/alta", label: "Alta" },
-              { href: "/proveedores/busqueda", label: "Búsqueda" },
-            ]}
-          />
-
-          <SubmenuSection
-            label="Operaciones"
-            icon={BriefcaseBusiness}
-            isOpen={openSubmenu === "operaciones"}
-            onToggle={() => toggleSubmenu("operaciones")}
-            isActive={pathname.includes("/operaciones")}
-            defaultHref="/operaciones/despacho-aduanal"
-            submenuItems={[
-              {
-                href: "/operaciones/despacho-aduanal",
-                label: "Despacho aduanal",
-              },
-            ]}
-          />
-
-          <MenuItem
-            href="/usuarios"
-            label="Usuarios"
-            icon={UserRound}
-            isActive={pathname.includes("/usuarios")}
-          />
+      {/* Celular: una sola fila horizontal. Desde tablet: dos cápsulas, arriba y abajo. */}
+      <div className="flex min-h-0 flex-1 gap-1 overflow-x-auto px-4 py-2 md:flex-col md:justify-between md:gap-3 md:overflow-visible md:px-0 md:pt-(--clp-capsula-arriba) md:pb-(--clp-capsula-abajo)">
+        <ul className="clp-capsula clp-capsula-principal flex max-md:shrink-0 max-md:gap-1" aria-label="Módulos">
+          {MENU_PRINCIPAL.map(renderItem)}
+        </ul>
+        <ul className="clp-capsula clp-capsula-cuenta flex shrink-0 max-md:gap-1" aria-label="Cuenta">
+          {MENU_CUENTA.map(renderItem)}
         </ul>
       </div>
     </div>

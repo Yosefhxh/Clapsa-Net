@@ -1,158 +1,209 @@
 'use server';
 
-import { uploadDocument } from '@/shared/actions/storage';
-import {
-  OperationClientOption,
-  OperationDocumentKey,
-  OperationLayoutData,
-  OperationStageState,
-} from '../types';
-import {
-  dalActualizarEstadoEtapa,
-  dalAsignarClienteOperacion,
-  dalObtenerClientesOperacion,
-  dalObtenerOperacionDespacho,
-  dalValidarDocumentoOperacion,
-  dalVincularDocumentoOperacion,
-} from '../dal/operaciones-dal';
+import { revalidatePath } from 'next/cache';
+import { MedioTransporte, TipoDocumento, TipoOperacion } from '@prisma/client';
+import { z } from 'zod';
+import { requerirUsuario } from '@/shared/auth/session';
+import { ejecutar, ErrorNegocio, type Resultado } from '@/shared/lib/resultado';
+import type { AccionPaso } from '../domain/proceso';
+import * as servicio from '../servicio/operaciones-servicio';
 
-export type DespachoActionResult<T = void> =
-  | {
-      success: true;
-      message: string;
-      data: T;
+const textoOpcional = z
+  .string()
+  .trim()
+  .max(200)
+  .transform((v) => (v === '' ? null : v))
+  .nullable()
+  .optional()
+  .transform((v) => v ?? null);
+
+const fechaOpcional = z
+  .string()
+  .trim()
+  .nullable()
+  .optional()
+  .transform((v, ctx) => {
+    if (!v) return null;
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) {
+      ctx.addIssue({ code: 'custom', message: 'Fecha no válida.' });
+      return z.NEVER;
     }
-  | {
-      success: false;
-      message: string;
-      data?: never;
-    };
+    return d;
+  });
 
-export async function obtenerClientesOperacion(): Promise<OperationClientOption[]> {
-  return await dalObtenerClientesOperacion();
+function validar<T>(esquema: z.ZodType<T>, datos: unknown): T {
+  const r = esquema.safeParse(datos);
+  if (!r.success) throw new ErrorNegocio(r.error.issues[0]?.message ?? 'Revisa los datos capturados.');
+  return r.data;
 }
 
-export async function obtenerOperacionDespacho(traficoId?: string): Promise<OperationLayoutData | null> {
-  return await dalObtenerOperacionDespacho(traficoId);
+function refrescar(traficoId?: string) {
+  revalidatePath('/operaciones');
+  revalidatePath('/');
+  if (traficoId) revalidatePath(`/operaciones/${traficoId}`);
 }
 
-export async function asignarClienteDespacho(
+const esquemaNueva = z.object({
+  tipo: z.enum(TipoOperacion, { message: 'Elige el tipo de operación.' }),
+  medio: z.enum(MedioTransporte, { message: 'Elige el medio de transporte.' }),
+  aduana: z.string().trim().min(1, 'Elige la aduana.'),
+  clavePedimento: textoOpcional,
+  eta: fechaOpcional,
+  folioManual: textoOpcional,
+  clienteId: z.number().int().positive().nullable(),
+  importadorId: z.number().int().positive().nullable(),
+});
+
+export async function crearOperacionAction(datos: z.input<typeof esquemaNueva>): Promise<Resultado<{ id: string; folio: string }>> {
+  return ejecutar('crearOperacion', async () => {
+    const usuario = await requerirUsuario('operaciones.operar');
+    const id = await servicio.crearOperacion(validar(esquemaNueva, datos), usuario);
+    refrescar();
+    return { id, folio: await servicio.folioDeOperacion(id) };
+  }, 'Operación creada.');
+}
+
+export async function asignarClienteAction(traficoId: string, clienteId: number, importadorId: number | null): Promise<Resultado> {
+  return ejecutar('asignarCliente', async () => {
+    const usuario = await requerirUsuario('operaciones.operar');
+    await servicio.asignarCliente(traficoId, clienteId, importadorId, usuario);
+    refrescar(traficoId);
+    return undefined;
+  }, 'Asignación guardada.');
+}
+
+const ACCIONES: AccionPaso[] = ['INICIAR', 'COMPLETAR', 'NO_APLICA', 'ACTIVAR', 'REABRIR', 'MODULAR_VERDE', 'MODULAR_ROJO', 'LIBERAR'];
+
+export async function cambiarPasoAction(
   traficoId: string,
-  clienteId: number
-): Promise<DespachoActionResult> {
-  try {
-    await dalAsignarClienteOperacion(traficoId, clienteId);
-
-    return {
-      success: true,
-      message: 'Cliente asignado correctamente a la operación.',
-      data: undefined,
-    };
-  } catch (error) {
-    console.error('Error asignando cliente:', error);
-    return {
-      success: false,
-      message: 'No se pudo asignar el cliente a la operación.',
-    };
-  }
+  traficoPasoId: string,
+  accion: AccionPaso,
+  extra: { numeroPedimento?: string } = {},
+): Promise<Resultado> {
+  return ejecutar('cambiarPaso', async () => {
+    const usuario = await requerirUsuario();
+    if (!ACCIONES.includes(accion)) throw new ErrorNegocio('Acción no válida.');
+    await servicio.cambiarEstadoPaso(traficoPasoId, accion, usuario, extra);
+    refrescar(traficoId);
+    return undefined;
+  });
 }
 
-export async function actualizarEstadoEtapaDespacho(input: {
-  traficoId: string;
-  pasoId: string;
-  estado: OperationStageState;
-}): Promise<
-  DespachoActionResult<{
-    fechaInicio: Date | null;
-    fechaFin: Date | null;
-    tiempoInvertido: number | null;
-  }>
-> {
-  try {
-    const resultado = await dalActualizarEstadoEtapa(input);
-
-    return {
-      success: true,
-      message: 'Estado de etapa actualizado correctamente.',
-      data: resultado,
-    };
-  } catch (error) {
-    console.error('Error actualizando estado de etapa:', error);
-    return {
-      success: false,
-      message: 'No se pudo actualizar el estado de la etapa.',
-    };
-  }
+export async function subirDocumentoAction(traficoId: string, documentoId: string, formData: FormData): Promise<Resultado> {
+  return ejecutar('subirDocumento', async () => {
+    const usuario = await requerirUsuario('documentos.revisar');
+    await servicio.subirDocumento(documentoId, formData.get('file'), usuario);
+    refrescar(traficoId);
+    return undefined;
+  }, 'Documento subido. Queda por revisar.');
 }
 
-export async function subirDocumentoOperacion(
-  inputOrTraficoId: { traficoId: string; documento: OperationDocumentKey; formData: FormData } | string,
-  documentoArg?: OperationDocumentKey,
-  formDataArg?: FormData
-): Promise<DespachoActionResult<{ url: string }>> {
-  try {
-    const input =
-      typeof inputOrTraficoId === 'string'
-        ? {
-            traficoId: inputOrTraficoId,
-            documento: documentoArg!,
-            formData: formDataArg!,
-          }
-        : inputOrTraficoId;
-
-    const upload = await uploadDocument(input.formData);
-
-    if (!upload.success) {
-      return {
-        success: false,
-        message: upload.message,
-      };
-    }
-
-    await dalVincularDocumentoOperacion(input.traficoId, input.documento, upload.url);
-
-    return {
-      success: true,
-      message: 'Documento subido y vinculado correctamente.',
-      data: { url: upload.url },
-    };
-  } catch (error) {
-    console.error('Error subiendo documento:', error);
-    return {
-      success: false,
-      message: 'No se pudo subir el documento.',
-    };
-  }
+/** Documento inicial al abrir el expediente: se sube al tipo elegido (BL, factura, packing list…). */
+export async function subirDocumentoInicialAction(traficoId: string, tipo: TipoDocumento, formData: FormData): Promise<Resultado> {
+  return ejecutar('subirDocumentoInicial', async () => {
+    const usuario = await requerirUsuario('documentos.revisar');
+    if (!Object.values(TipoDocumento).includes(tipo)) throw new ErrorNegocio('Tipo de documento no válido.');
+    const id = await servicio.documentoDeTipo(traficoId, tipo);
+    await servicio.subirDocumento(id, formData.get('file'), usuario);
+    refrescar(traficoId);
+    return undefined;
+  });
 }
 
-export async function validarDocumentoOperacion(
-  inputOrTraficoId: { traficoId: string; documento: OperationDocumentKey; aprobado: boolean } | string,
-  documentoArg?: OperationDocumentKey,
-  aprobadoArg?: boolean
-): Promise<DespachoActionResult> {
-  try {
-    const input =
-      typeof inputOrTraficoId === 'string'
-        ? {
-            traficoId: inputOrTraficoId,
-            documento: documentoArg!,
-            aprobado: aprobadoArg!,
-          }
-        : inputOrTraficoId;
-
-    await dalValidarDocumentoOperacion(input.traficoId, input.documento, input.aprobado);
-
-    return {
-      success: true,
-      message: input.aprobado ? 'Documento aprobado.' : 'Documento rechazado.',
-      data: undefined,
-    };
-  } catch (error) {
-    console.error('Error validando documento:', error);
-    return {
-      success: false,
-      message: 'No se pudo actualizar la validación del documento.',
-    };
-  }
+export async function revisarDocumentoAction(traficoId: string, documentoId: string, aprobar: boolean, motivo: string | null): Promise<Resultado> {
+  return ejecutar('revisarDocumento', async () => {
+    const usuario = await requerirUsuario('documentos.revisar');
+    await servicio.revisarDocumento(documentoId, aprobar, motivo, usuario);
+    refrescar(traficoId);
+    return undefined;
+  }, aprobar ? 'Documento aprobado.' : 'Documento rechazado.');
 }
 
+const esquemaDatos = z.object({
+  folioManual: textoOpcional,
+  eta: fechaOpcional,
+  etd: fechaOpcional,
+  clavePedimento: textoOpcional,
+  blGuia: textoOpcional,
+  naviera: textoOpcional,
+  puertoOrigen: textoOpcional,
+  incoterm: textoOpcional,
+  valorFactura: z
+    .union([z.number(), z.string()])
+    .nullable()
+    .optional()
+    .transform((v, ctx) => {
+      if (v === '' || v == null) return null;
+      const n = typeof v === 'number' ? v : Number(String(v).replace(/,/g, ''));
+      if (!Number.isFinite(n) || n < 0) {
+        ctx.addIssue({ code: 'custom', message: 'El valor de la factura no es válido.' });
+        return z.NEVER;
+      }
+      return Math.round(n * 100) / 100;
+    }),
+  monedaFactura: z.enum(['USD', 'MXN', 'EUR'], { message: 'Moneda no válida.' }),
+  vendedorExtranjero: textoOpcional,
+  fracciones: textoOpcional,
+});
+
+export async function actualizarDatosAction(traficoId: string, datos: z.input<typeof esquemaDatos>): Promise<Resultado> {
+  return ejecutar('actualizarDatos', async () => {
+    const usuario = await requerirUsuario('operaciones.operar');
+    await servicio.actualizarDatosDespacho(traficoId, validar(esquemaDatos, datos), usuario);
+    refrescar(traficoId);
+    return undefined;
+  }, 'Datos guardados.');
+}
+
+export async function agregarContenedorAction(traficoId: string, numero: string, tipo: string | null): Promise<Resultado> {
+  return ejecutar('agregarContenedor', async () => {
+    const usuario = await requerirUsuario('operaciones.operar');
+    await servicio.agregarContenedor(traficoId, numero, tipo?.trim() || null, usuario);
+    refrescar(traficoId);
+    return undefined;
+  }, 'Contenedor agregado.');
+}
+
+export async function quitarContenedorAction(traficoId: string, contenedorId: string): Promise<Resultado> {
+  return ejecutar('quitarContenedor', async () => {
+    const usuario = await requerirUsuario('operaciones.operar');
+    await servicio.quitarContenedor(contenedorId, usuario);
+    refrescar(traficoId);
+    return undefined;
+  }, 'Contenedor quitado.');
+}
+
+export async function asignarProveedorAction(traficoId: string, traficoPasoId: string, proveedorId: number | null, costo: number | null): Promise<Resultado> {
+  return ejecutar('asignarProveedor', async () => {
+    const usuario = await requerirUsuario('operaciones.operar');
+    await servicio.asignarProveedorPaso(traficoPasoId, proveedorId, costo, usuario);
+    refrescar(traficoId);
+    return undefined;
+  }, proveedorId == null ? 'Proveedor quitado.' : 'Proveedor asignado.');
+}
+
+const esquemaCargo = z.object({
+  tipo: z.enum(['CONTRIBUCION', 'HONORARIO', 'OTRO'], { message: 'Elige el tipo de cargo.' }),
+  concepto: z.string().trim().min(3, 'Escribe el concepto del cargo.').max(120),
+  monto: z.coerce.number({ message: 'El importe no es válido.' }).positive('El importe debe ser mayor a cero.'),
+  moneda: z.enum(['MXN', 'USD'], { message: 'Moneda no válida.' }),
+});
+
+export async function agregarCargoAction(traficoId: string, datos: z.input<typeof esquemaCargo>): Promise<Resultado> {
+  return ejecutar('agregarCargo', async () => {
+    const usuario = await requerirUsuario('cuenta.emitir');
+    await servicio.agregarCargo(traficoId, validar(esquemaCargo, datos), usuario);
+    refrescar(traficoId);
+    return undefined;
+  }, 'Cargo agregado.');
+}
+
+export async function eliminarCargoAction(traficoId: string, cargoId: string): Promise<Resultado> {
+  return ejecutar('eliminarCargo', async () => {
+    const usuario = await requerirUsuario('cuenta.emitir');
+    await servicio.eliminarCargo(cargoId, usuario);
+    refrescar(traficoId);
+    return undefined;
+  }, 'Cargo eliminado.');
+}

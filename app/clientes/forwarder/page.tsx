@@ -1,13 +1,5 @@
-"use client";
+import { ClientesPagina } from "@/features/clientes/components/ClientesPagina";
 
-import { ClientesManagementPage } from "@/features/clientes";
-
-export default function ClientesPage() {
-  return (
-    <ClientesManagementPage
-      tipoCliente="FORWARDER"
-      title="Clientes Forwarder"
-      description="Administracion de clientes forwarder Clapsa."
-    />
-  );
+export default function Page() {
+  return <ClientesPagina tipo="FORWARDER" />;
 }

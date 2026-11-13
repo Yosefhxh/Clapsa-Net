@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { iniciarSesionAction } from "@/features/usuarios";
-import { useSession } from "../components/SessionProvider";
 
 interface LoginFormState {
   correo: string;
@@ -29,7 +28,6 @@ const INITIAL_ERRORS: LoginErrors = {
 
 export function useLogin() {
   const router = useRouter();
-  const { setSessionUser } = useSession();
   const [form, setForm] = useState<LoginFormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<LoginErrors>(INITIAL_ERRORS);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,19 +43,11 @@ export function useLogin() {
 
   const validarFormulario = () => {
     if (!form.correo.trim() || !form.correo.includes("@")) {
-      return {
-        general: "Usuario incorrecto",
-        correo: "Usuario incorrecto",
-        password: "",
-      };
+      return { general: "", correo: "Escribe un correo válido", password: "" };
     }
 
-    if (!form.password.trim()) {
-      return {
-        general: "Contraseña incorrecta",
-        correo: "",
-        password: "Contraseña incorrecta",
-      };
+    if (!form.password) {
+      return { general: "", correo: "", password: "Escribe tu contraseña" };
     }
 
     return null;
@@ -77,23 +67,12 @@ export function useLogin() {
       const response = await iniciarSesionAction(form.correo, form.password);
 
       if (!response.success) {
-        const errorMessage = response.error || "Ocurrió un error inesperado";
-        setErrors({
-          general: errorMessage,
-          correo: errorMessage === "Usuario no encontrado" ? errorMessage : "",
-          password: errorMessage === "Contraseña incorrecta" ? errorMessage : "",
-        });
+        setErrors({ general: response.error || "Ocurrió un error inesperado", correo: "", password: "" });
         return false;
       }
 
-      const loginDate = new Date().toISOString();
-      setSessionUser({
-        ...response.usuario,
-        fechaIngreso: loginDate,
-      } as any);
-
       setForm(INITIAL_FORM);
-      router.push("/");
+      router.replace("/");
       router.refresh();
       return true;
     } finally {

@@ -1,13 +1,5 @@
-"use client";
+import { ClientesPagina } from "@/features/clientes/components/ClientesPagina";
 
-import { ClientesManagementPage } from "@/features/clientes";
-
-export default function ClientesPage() {
-  return (
-    <ClientesManagementPage
-      tipoCliente="DIRECTO"
-      title="Clientes Directos"
-      description="Administracion de clientes directos Clapsa."
-    />
-  );
+export default function Page() {
+  return <ClientesPagina tipo="DIRECTO" />;
 }

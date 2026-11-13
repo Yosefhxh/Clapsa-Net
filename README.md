@@ -37,6 +37,48 @@ Plataforma administrativa interna construida con Next.js para la gestión de cli
 
 Revisa las dependencias y scripts en [package.json](package.json#L1).
 
+## Proceso de despacho, sesión y despliegue
+
+### Qué incluye
+
+- **Operaciones**: bandeja con búsqueda y filtros, alta de operación y detalle con el proceso en 8 fases
+  (importación y exportación), candados entre pasos, documentos con estado (pendiente, por revisar,
+  aprobado, rechazado con motivo), cliente e importador (directo / forwarder), contenedores ISO 6346,
+  proveedores por paso con costo, cuenta de gastos y bitácora.
+- **Proveedores**: una sola página, servicios que presta (tus etapas) con tarifa base y aduanas.
+- **Home**: widgets calculados con datos reales, personalizables por usuario, y pendientes del día.
+- **Configuración**: agencia, aduanas, proceso y SLA, documentos, claves de pedimento, alertas,
+  cuenta de gastos y matriz de permisos.
+- **Sesión segura**: cookie httpOnly con sesión en BD, permisos por rol revisados en el servidor y
+  contraseñas con scrypt (las anteriores se actualizan solas al iniciar sesión).
+
+### Variables de entorno
+
+| Variable | Uso |
+|---|---|
+| `DATABASE_URL` | PostgreSQL. En desarrollo se toma de `.env.development.local` (base local). |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob para documentos. Sin él, en desarrollo se guarda en `public/uploads`. |
+| `CRON_SECRET` | Protege `/api/cron/check-encargos`. |
+| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` | Opcionales: el seed crea un administrador si no existe. |
+
+### Desplegar en producción (en este orden)
+
+1. Respaldo de la base de producción (`pg_dump`).
+2. `npx prisma migrate deploy` — agrega tablas y columnas; no borra datos. Traslada los documentos de la
+   tabla anterior `Documento` al expediente nuevo como aprobados y conserva el estado de los pasos.
+3. `npx prisma db seed` — catálogos (16 pasos, documentos, aduanas, claves, alertas).
+4. Configurar `BLOB_READ_WRITE_TOKEN` y desplegar.
+5. Todos los usuarios vuelven a iniciar sesión una vez (la sesión ahora vive en el servidor).
+
+### Pruebas
+
+```bash
+npm test                 # unitarias: proceso, contraseñas, validaciones
+DATABASE_URL_TEST=postgresql://usuario@localhost:5432/clapsa_test npm run test:integracion
+```
+
+Las pruebas de integración recorren un despacho completo y solo se ejecutan contra una base local.
+
 ## Instalación y ejecución
 
 Requisitos

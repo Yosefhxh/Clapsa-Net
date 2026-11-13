@@ -1,24 +1,32 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/features/session";
 import { AppFrame } from "@/shared/components/layout/AppFrame";
-const inter = Inter({ subsets: ["latin"] });
+import { obtenerUsuarioActual } from "@/shared/auth/session";
+import { obtenerAvisosMenu } from "@/shared/lib/avisos-menu";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+// Plus Jakarta Sans solo en el inicio de sesión (igual que en producción).
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" });
 
 export const metadata: Metadata = {
-  title: "CLAPSA NET - Tablero de Operaciones",
-  description: "Gestión eficiente de operaciones aduaneras",
+  title: "CLAPSA NET - Control de Tráficos",
+  description: "Estatus y tiempos de cada importación y exportación",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const usuario = await obtenerUsuarioActual();
+  const avisos = usuario ? await obtenerAvisosMenu() : null;
+
   return (
-    <html lang="es">
-      <body className={`${inter.className} bg-slate-100`}>
-        <SessionProvider>
+    <html lang="es" className={`${inter.variable} ${jakarta.variable}`}>
+      <body className="bg-lienzo font-sans">
+        <SessionProvider usuario={usuario} avisos={avisos}>
           <AppFrame>{children}</AppFrame>
         </SessionProvider>
       </body>

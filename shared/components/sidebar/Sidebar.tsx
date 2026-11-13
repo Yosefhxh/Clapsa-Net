@@ -1,13 +1,11 @@
 // components/Sidebar.tsx
 "use client";
 
-import { SidebarHeader } from "./SidebarHeader";
 import { SidebarMenuContent } from "./SidebarMenuContent";
 
 export function Sidebar() {
   return (
-    <div className="flex h-screen w-64 flex-col bg-[#242B83] text-white shadow-lg">
-      <SidebarHeader />
+    <div className="clp-nav flex w-full shrink-0 flex-col md:relative md:z-30 md:my-3 md:ml-4 md:w-[68px]">
       <SidebarMenuContent />
     </div>
   );

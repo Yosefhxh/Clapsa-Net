@@ -19,7 +19,7 @@ const config: Config = {
         },
         extend: {
             colors: {
-                aduanaBlue: "#242B83",
+                aduanaBlue: "#153079",
                 background: "#ffffff",
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",
