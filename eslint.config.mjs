@@ -15,7 +15,6 @@ const eslintConfig = defineConfig([
     // Generados o de terceros:
     "generated/**",
     "public/**",
-    "app.js",
   ]),
 ]);
 
