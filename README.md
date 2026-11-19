@@ -23,8 +23,7 @@ documentales, los catálogos de clientes y proveedores, y el control de acceso d
 [Funcionalidades](#-funcionalidades) ·
 [Arquitectura](#-arquitectura) ·
 [Instalación](#-instalación-y-configuración) ·
-[Seguridad](#-seguridad-y-control-de-acceso) ·
-[Estado](#-estado-del-proyecto)
+[Seguridad](#-seguridad-y-control-de-acceso)
 
 </div>
 
@@ -323,35 +322,6 @@ DATABASE_URL_TEST="postgresql://usuario@localhost:5432/clapsa_test" npm run test
 - **Autorización en dos niveles.** `proxy.ts` solo redirige según exista o no la cookie; la verificación real ocurre en el servidor: las páginas usan `usuarioConPermiso()` y cada Server Action llama a `requerirUsuario(permiso)`. Los cambios de paso validan además el permiso que corresponde a ese paso (pedimento, cuenta de gastos, reapertura).
 - **Validación de entrada** con Zod en las acciones y validación de PDF (tipo y 5 MB) antes de guardar.
 - **Endpoint de cron** protegido con `CRON_SECRET` y comparación en tiempo constante.
-
----
-
-## 📈 Estado del proyecto
-
-CLAPSA NET está en **desarrollo activo**, en la rama del rediseño de la interfaz.
-
-| Área | Estado |
-|---|---|
-| Operaciones, proceso por fases, candados, SLA y bitácora | ✅ Implementado |
-| Expediente documental con revisión | ✅ Implementado |
-| Clientes, proveedores y lectura de constancia fiscal | ✅ Implementado |
-| Usuarios, sesiones, roles y matriz de permisos | ✅ Implementado |
-| Inicio con indicadores y Configuración | ✅ Implementado |
-| Vencimiento de encargos conferidos (cron) | 🟡 Parcial: desactiva los encargos vencidos y lo registra en el log, pero **no envía correos**, y la programación del cron no está en el repositorio. |
-| Bitácora | 🟡 Parcial: cubre las operaciones; los cambios en clientes, proveedores, usuarios y configuración no se registran. |
-| Indicadores de Inicio | 🟡 Parcial: hay 12 indicadores definidos, pero Inicio muestra 6 fijos que solo se pueden reordenar. |
-| Depósitos / anticipos | ⚪ No implementado: existe el modelo `Deposito`, sin pantallas ni acciones. |
-| Lectura de PDF escaneados (OCR) | ⚪ No implementado: la constancia debe tener texto seleccionable. |
-
----
-
-## 📝 Consideraciones
-
-- **Archivos en producción.** Sin `BLOB_READ_WRITE_TOKEN`, la subida de archivos falla en producción a propósito; el guardado en `public/uploads/` es solo para desarrollo.
-- **Worker de PDF.** `public/pdf.worker.js` debe corresponder a la versión instalada de `pdfjs-dist` (actualmente 5.6.205). Si se actualiza la librería, también hay que reemplazar el worker.
-- **Tamaño de carga.** `next.config.ts` eleva el límite del cuerpo de las Server Actions a 6 MB para admitir PDF de 5 MB.
-- **Modelo heredado.** El modelo `Documento` está marcado como obsoleto y se conserva solo para la migración de datos hacia `DocumentoOperacion`.
-- **Despliegue.** Orden recomendado para una base existente: respaldo (`pg_dump`) → `npx prisma migrate deploy` → `npx prisma db seed` → configurar variables → desplegar. Tras el cambio a sesiones en el servidor, todos los usuarios deben volver a iniciar sesión una vez.
 
 ---
 
